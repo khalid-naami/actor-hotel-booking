@@ -1,0 +1,90 @@
+{
+    "title": "Hotel Booking Intelligence Input",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "destination": {
+            "title": "Destination City",
+            "type": "string",
+            "description": "City filter (e.g. Marrakech, Paris, Tokyo, Dubai, Rome, New York, Bali, or 'All Destinations \ud83c\udf0d').",
+            "default": "All Destinations \ud83c\udf0d",
+            "editor": "textfield"
+        },
+        "maxPriceUsd": {
+            "title": "Maximum Price Per Night (USD)",
+            "type": "integer",
+            "description": "Upper budget threshold per night.",
+            "default": 2000,
+            "minimum": 50,
+            "maximum": 10000
+        },
+        "minStars": {
+            "title": "Minimum Star Rating",
+            "type": "integer",
+            "description": "Minimum hotel star rating (1 to 5 stars).",
+            "default": 4,
+            "minimum": 1,
+            "maximum": 5
+        },
+        "propertyType": {
+            "title": "Property Type",
+            "type": "string",
+            "description": "Filter by style of accommodation.",
+            "default": "All Types",
+            "editor": "select",
+            "enum": [
+                "All Types",
+                "Historic Palace",
+                "Boutique Riad",
+                "Luxury Resort",
+                "Urban Luxury Hotel",
+                "Private Villa"
+            ]
+        },
+        "currency": {
+            "title": "Pricing Currency",
+            "type": "string",
+            "description": "Target currency for rate conversion and quotes.",
+            "default": "USD ($)",
+            "editor": "select",
+            "enum": [
+                "USD ($)",
+                "EUR (\u20ac)",
+                "MAD (\u062f.\u0645.)",
+                "SAR (\u0631.\u0633)",
+                "AED (\u062f.\u0625)",
+                "GBP (\u00a3)",
+                "JPY (\u00a5)"
+            ]
+        },
+        "checkinDaysFromNow": {
+            "title": "Check-in Offset (Days from Today)",
+            "type": "integer",
+            "description": "Number of days from now for sample reservation simulation.",
+            "default": 7,
+            "minimum": 0,
+            "maximum": 365
+        },
+        "stayNights": {
+            "title": "Length of Stay (Nights)",
+            "type": "integer",
+            "description": "Number of consecutive nights to price.",
+            "default": 3,
+            "minimum": 1,
+            "maximum": 30
+        },
+        "searchQuery": {
+            "title": "Keyword Search",
+            "type": "string",
+            "description": "Search by hotel name, address, or landmark.",
+            "default": "",
+            "editor": "textfield"
+        },
+        "apiKey": {
+            "title": "Apify API Token / Custom Key",
+            "type": "string",
+            "description": "Optional Apify API token or custom authentication key for MCP and programmatic triggers.",
+            "editor": "textfield"
+        }
+    }
+}
