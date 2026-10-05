@@ -1,0 +1,18 @@
+{
+    "actorOutputSchemaVersion": 1,
+    "title": "Hotel & Luxury Stays Intelligence Output",
+    "properties": {
+        "results": {
+            "type": "string",
+            "title": "Dataset Items",
+            "description": "Full hotel inventory, room classes, amenities, and quotes",
+            "template": "{{links.apiDefaultDatasetUrl}}/items"
+        },
+        "overview": {
+            "type": "string",
+            "title": "Summary Payload",
+            "description": "Summary report stored in Key-Value store",
+            "template": "{{links.apiDefaultKeyValueStoreUrl}}/records/OUTPUT"
+        }
+    }
+}
