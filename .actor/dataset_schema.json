@@ -1,0 +1,48 @@
+{
+    "actorSpecification": 1,
+    "fields": {
+        "type": "object",
+        "properties": {
+            "id": {
+                "type": "string",
+                "title": "Hotel ID"
+            },
+            "name": {
+                "type": "string",
+                "title": "Hotel Name"
+            },
+            "city": {
+                "type": "string",
+                "title": "Destination City"
+            },
+            "country": {
+                "type": "string",
+                "title": "Country"
+            },
+            "stars": {
+                "type": "integer",
+                "title": "Star Rating"
+            },
+            "property_type": {
+                "type": "string",
+                "title": "Property Type"
+            },
+            "rating": {
+                "type": "number",
+                "title": "Guest Review Score"
+            },
+            "base_price_usd_per_night": {
+                "type": "number",
+                "title": "Base Price (USD)"
+            },
+            "base_price_converted": {
+                "type": "string",
+                "title": "Base Price Formatted"
+            },
+            "sample_quote": {
+                "type": "object",
+                "title": "Booking Quote Breakdown"
+            }
+        }
+    }
+}
