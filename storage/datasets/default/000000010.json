@@ -1,0 +1,70 @@
+{
+  "id": "RIOM-010",
+  "name": "Studio Riom de Coeur",
+  "city": "Riom",
+  "country": "France 🇫🇷",
+  "stars": 4,
+  "property_type": "Boutique Residence",
+  "rating": 9.4,
+  "review_count": 40,
+  "rating_badge": "Exceptional 🌟",
+  "address": "Studio Riom de Coeur, 63200 Riom, Puy-de-Dôme, France",
+  "lat": 45.8852,
+  "lon": 3.1077,
+  "distance_center_km": 2.2,
+  "amenities": [
+    "Free High-Speed WiFi 📶",
+    "Private En-suite Bathroom 🚿",
+    "Air Conditioning ❄️",
+    "Free Secure Parking 🚗",
+    "Buffet Breakfast Option 🥐",
+    "Soundproof Rooms 🤫"
+  ],
+  "base_price_usd_per_night": 86.4,
+  "base_price_converted": "€79",
+  "image_url": "https://cf.bstatic.com/xdata/images/hotel/max1024x768/768300786.webp?k=a50966cd59ff6a35382d065dcdc285ea4ab5f3c81d24e74c98fca9b4c883732c&o=",
+  "booking_url": "https://www.booking.com/hotel/fr/studio-riom-de-coeur.fr.html",
+  "description": "Établissement hôtelier de qualité supérieure situé à Riom, Auvergne.",
+  "source": "Live Booking.com",
+  "room_types_available": [
+    {
+      "name": "Standard Double Room",
+      "size_sqm": 22,
+      "bed": "1 Large Double Bed",
+      "cancellation": "Free cancellation until 48h before",
+      "nightly_rate": "€79"
+    },
+    {
+      "name": "Comfort Superior King Room",
+      "size_sqm": 28,
+      "bed": "1 Extra-Large King Bed",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€99"
+    },
+    {
+      "name": "Executive Family Suite",
+      "size_sqm": 45,
+      "bed": "1 King Bed + 2 Single Beds",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€131"
+    }
+  ],
+  "sub_ratings": {
+    "Cleanliness": 9.6,
+    "Location": 9.2,
+    "Staff": 9.8,
+    "Comfort": 9.5,
+    "Value for Money": 9.1
+  },
+  "sample_quote": {
+    "checkin": "2026-10-14",
+    "checkout": "2026-10-17",
+    "nights": 3,
+    "room_name": "Standard Double Room",
+    "nightly_rate": "€79",
+    "subtotal": "€238",
+    "taxes_and_fees": "€45",
+    "grand_total": "€283",
+    "currency": "EUR (€)"
+  }
+}
