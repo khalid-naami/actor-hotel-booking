@@ -1,0 +1,70 @@
+{
+  "id": "RIOM-003",
+  "name": "Ace Hotel",
+  "city": "Riom",
+  "country": "France 🇫🇷",
+  "stars": 4,
+  "property_type": "Urban Hotel",
+  "rating": 8.5,
+  "review_count": 2093,
+  "rating_badge": "Superb ✨",
+  "address": "Ace Hotel, 63200 Riom, Puy-de-Dôme, France",
+  "lat": 45.8642,
+  "lon": 3.0937,
+  "distance_center_km": 0.8,
+  "amenities": [
+    "Free High-Speed WiFi 📶",
+    "Private En-suite Bathroom 🚿",
+    "Air Conditioning ❄️",
+    "Free Secure Parking 🚗",
+    "Buffet Breakfast Option 🥐",
+    "Soundproof Rooms 🤫"
+  ],
+  "base_price_usd_per_night": 77.8,
+  "base_price_converted": "€72",
+  "image_url": "https://cf.bstatic.com/xdata/images/hotel/max1024x768/266965683.webp?k=ab45184c3ffe7ec1920fa607c37f4729977e8f91f4f677e672e45c1f01ded8f8&o=",
+  "booking_url": "https://www.booking.com/hotel/fr/ace-riom.fr.html",
+  "description": "Situé à Riom, à proximité du principal quartier des affaires, l’Ace Hotel Riom propose une réception ouverte 24h/24.",
+  "source": "Live Booking.com",
+  "room_types_available": [
+    {
+      "name": "Standard Double Room",
+      "size_sqm": 22,
+      "bed": "1 Large Double Bed",
+      "cancellation": "Free cancellation until 48h before",
+      "nightly_rate": "€72"
+    },
+    {
+      "name": "Comfort Superior King Room",
+      "size_sqm": 28,
+      "bed": "1 Extra-Large King Bed",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€89"
+    },
+    {
+      "name": "Executive Family Suite",
+      "size_sqm": 45,
+      "bed": "1 King Bed + 2 Single Beds",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€118"
+    }
+  ],
+  "sub_ratings": {
+    "Cleanliness": 8.7,
+    "Location": 8.3,
+    "Staff": 8.8,
+    "Comfort": 8.6,
+    "Value for Money": 8.2
+  },
+  "sample_quote": {
+    "checkin": "2026-10-14",
+    "checkout": "2026-10-17",
+    "nights": 3,
+    "room_name": "Standard Double Room",
+    "nightly_rate": "€72",
+    "subtotal": "€215",
+    "taxes_and_fees": "€42",
+    "grand_total": "€256",
+    "currency": "EUR (€)"
+  }
+}
