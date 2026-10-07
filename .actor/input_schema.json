@@ -1,28 +1,57 @@
 {
-    "title": "Hotel Booking Intelligence Input",
+    "title": "Hotel Booking & Booking.com Live Scraper Input",
     "type": "object",
     "schemaVersion": 1,
     "properties": {
+        "bookingUrl": {
+            "title": "Booking.com Destination URL",
+            "type": "string",
+            "description": "Direct Booking.com city/region URL to live-scrape real-time hotel records, HD images, reviews, and rates.",
+            "default": "https://www.booking.com/city/fr/riom.fr.html",
+            "editor": "textfield"
+        },
         "destination": {
             "title": "Destination City",
             "type": "string",
-            "description": "City filter (e.g. Marrakech, Paris, Tokyo, Dubai, Rome, New York, Bali, or 'All Destinations \ud83c\udf0d').",
-            "default": "All Destinations \ud83c\udf0d",
+            "description": "City filter (e.g. Riom, Marrakech, Paris, Tokyo, Dubai, or 'All Destinations 🌍').",
+            "default": "Riom",
             "editor": "textfield"
+        },
+        "liveScrape": {
+            "title": "Enable Live Booking.com Scraping",
+            "type": "boolean",
+            "description": "If true, connects directly to Booking.com using anti-bot bypass to retrieve live hotel prices, photos, and ratings.",
+            "default": true
+        },
+        "currency": {
+            "title": "Pricing Currency",
+            "type": "string",
+            "description": "Target currency for rate conversion and quotes.",
+            "default": "EUR (€)",
+            "editor": "select",
+            "enum": [
+                "EUR (€)",
+                "USD ($)",
+                "MAD (د.م.)",
+                "SAR (ر.س)",
+                "AED (د.إ)",
+                "GBP (£)",
+                "JPY (¥)"
+            ]
         },
         "maxPriceUsd": {
             "title": "Maximum Price Per Night (USD)",
             "type": "integer",
             "description": "Upper budget threshold per night.",
             "default": 2000,
-            "minimum": 50,
+            "minimum": 30,
             "maximum": 10000
         },
         "minStars": {
             "title": "Minimum Star Rating",
             "type": "integer",
             "description": "Minimum hotel star rating (1 to 5 stars).",
-            "default": 4,
+            "default": 3,
             "minimum": 1,
             "maximum": 5
         },
@@ -34,27 +63,12 @@
             "editor": "select",
             "enum": [
                 "All Types",
+                "Urban Hotel",
+                "Boutique Residence",
                 "Historic Palace",
                 "Boutique Riad",
                 "Luxury Resort",
-                "Urban Luxury Hotel",
                 "Private Villa"
-            ]
-        },
-        "currency": {
-            "title": "Pricing Currency",
-            "type": "string",
-            "description": "Target currency for rate conversion and quotes.",
-            "default": "USD ($)",
-            "editor": "select",
-            "enum": [
-                "USD ($)",
-                "EUR (\u20ac)",
-                "MAD (\u062f.\u0645.)",
-                "SAR (\u0631.\u0633)",
-                "AED (\u062f.\u0625)",
-                "GBP (\u00a3)",
-                "JPY (\u00a5)"
             ]
         },
         "checkinDaysFromNow": {
