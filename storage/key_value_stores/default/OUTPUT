@@ -1,0 +1,104 @@
+{
+  "destination": "Riom",
+  "totalMatchingHotels": 26,
+  "currency": "EUR (€)",
+  "bookingUrl": "https://www.booking.com/city/fr/riom.fr.html",
+  "hotelOverview": [
+    {
+      "name": "B&B HOTEL Clermont-Ferrand Nord",
+      "city": "Riom",
+      "stars": 4,
+      "rating": 8.6,
+      "pricePerNight": "€62",
+      "bookingUrl": "https://www.booking.com/hotel/fr/b-amp-b-riom.fr.html"
+    },
+    {
+      "name": "Campanile NATURE - Clermont-Ferrand Nord",
+      "city": "Riom",
+      "stars": 4,
+      "rating": 8.5,
+      "pricePerNight": "€71",
+      "bookingUrl": "https://www.booking.com/hotel/fr/campanile-clermont-ferrand-riom.fr.html"
+    },
+    {
+      "name": "Ace Hotel",
+      "city": "Riom",
+      "stars": 4,
+      "rating": 8.5,
+      "pricePerNight": "€72",
+      "bookingUrl": "https://www.booking.com/hotel/fr/ace-riom.fr.html"
+    },
+    {
+      "name": "Kyriad Clermont Ferrand Nord",
+      "city": "Riom",
+      "stars": 4,
+      "rating": 8.6,
+      "pricePerNight": "€111",
+      "bookingUrl": "https://www.booking.com/hotel/fr/anemotel.fr.html"
+    },
+    {
+      "name": "ibis Clermont Ferrand Nord",
+      "city": "Riom",
+      "stars": 3,
+      "rating": 8.1,
+      "pricePerNight": "€70",
+      "bookingUrl": "https://www.booking.com/hotel/fr/ibis-clermont-ferrand-nord-riom.fr.html"
+    },
+    {
+      "name": "ibis budget Clermont Ferrand Nord",
+      "city": "Riom",
+      "stars": 3,
+      "rating": 7.7,
+      "pricePerNight": "€48",
+      "bookingUrl": "https://www.booking.com/hotel/fr/etap-clermont-ferrand-nord-riom.fr.html"
+    },
+    {
+      "name": "La Caravelle",
+      "city": "Riom",
+      "stars": 3,
+      "rating": 7.8,
+      "pricePerNight": "€64",
+      "bookingUrl": "https://www.booking.com/hotel/fr/la-caravelle-riom.fr.html"
+    },
+    {
+      "name": "Charmant studio, au cœur de la ville de Riom",
+      "city": "Riom",
+      "stars": 4,
+      "rating": 9.1,
+      "pricePerNight": "€75",
+      "bookingUrl": "https://www.booking.com/hotel/fr/charmant-studio-au-coeur-de-la-ville-de-riom.fr.html"
+    },
+    {
+      "name": "Galaxy La tête dans les étoiles",
+      "city": "Riom",
+      "stars": 4,
+      "rating": 9.3,
+      "pricePerNight": "€147",
+      "bookingUrl": "https://www.booking.com/hotel/fr/galaxy-la-tete-dans-les-etoiles.fr.html"
+    },
+    {
+      "name": "Studio Riom de Coeur",
+      "city": "Riom",
+      "stars": 4,
+      "rating": 9.4,
+      "pricePerNight": "€79",
+      "bookingUrl": "https://www.booking.com/hotel/fr/studio-riom-de-coeur.fr.html"
+    },
+    {
+      "name": "LOGIS Hôtel Le Moulin Des Gardelles",
+      "city": "Riom",
+      "stars": 3,
+      "rating": 8.0,
+      "pricePerNight": "€70",
+      "bookingUrl": "https://www.booking.com/hotel/fr/le-moulin-des-gardelles.fr.html"
+    },
+    {
+      "name": "Première Classe Clermont Ferrand NordHôtel à Clermont-Ferrand",
+      "city": "Riom",
+      "stars": 3,
+      "rating": 6.5,
+      "pricePerNight": "€70",
+      "bookingUrl": "https://www.booking.com/hotel/fr/premiere-classe-clermont-ferrand-nord.fr.html"
+    }
+  ]
+}
