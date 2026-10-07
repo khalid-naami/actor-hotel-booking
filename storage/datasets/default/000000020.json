@@ -1,0 +1,70 @@
+{
+  "id": "RIOM-020",
+  "name": "Le BellevueHôtel à Châtel-Guyon",
+  "city": "Riom",
+  "country": "France 🇫🇷",
+  "stars": 3,
+  "property_type": "Urban Hotel",
+  "rating": 6.7,
+  "review_count": 72,
+  "rating_badge": "Very Good 👍",
+  "address": "Le BellevueHôtel à Châtel-Guyon, 63200 Riom, Puy-de-Dôme, France",
+  "lat": 45.9152,
+  "lon": 3.1277,
+  "distance_center_km": 4.2,
+  "amenities": [
+    "Free High-Speed WiFi 📶",
+    "Private En-suite Bathroom 🚿",
+    "Air Conditioning ❄️",
+    "Free Secure Parking 🚗",
+    "Buffet Breakfast Option 🥐",
+    "Soundproof Rooms 🤫"
+  ],
+  "base_price_usd_per_night": 140.4,
+  "base_price_converted": "€129",
+  "image_url": "https://cf.bstatic.com/xdata/images/hotel/270x270/624326418.jpg?k=97ead61454127dbc4d3e9d2019a46e515ea9873bbcccbbee525b69eee7d87b6d&o=",
+  "booking_url": "https://www.booking.com/hotel/fr/le-bellevue-chatel-guyon.fr.html",
+  "description": "Établissement hôtelier de qualité supérieure situé à Riom, Auvergne.",
+  "source": "Live Booking.com",
+  "room_types_available": [
+    {
+      "name": "Standard Double Room",
+      "size_sqm": 22,
+      "bed": "1 Large Double Bed",
+      "cancellation": "Free cancellation until 48h before",
+      "nightly_rate": "€129"
+    },
+    {
+      "name": "Comfort Superior King Room",
+      "size_sqm": 28,
+      "bed": "1 Extra-Large King Bed",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€161"
+    },
+    {
+      "name": "Executive Family Suite",
+      "size_sqm": 45,
+      "bed": "1 King Bed + 2 Single Beds",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€213"
+    }
+  ],
+  "sub_ratings": {
+    "Cleanliness": 6.8,
+    "Location": 6.6,
+    "Staff": 7.0,
+    "Comfort": 6.8,
+    "Value for Money": 6.5
+  },
+  "sample_quote": {
+    "checkin": "2026-10-14",
+    "checkout": "2026-10-17",
+    "nights": 3,
+    "room_name": "Standard Double Room",
+    "nightly_rate": "€129",
+    "subtotal": "€388",
+    "taxes_and_fees": "€64",
+    "grand_total": "€452",
+    "currency": "EUR (€)"
+  }
+}
