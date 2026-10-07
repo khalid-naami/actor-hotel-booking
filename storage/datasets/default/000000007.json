@@ -1,0 +1,70 @@
+{
+  "id": "RIOM-007",
+  "name": "La Caravelle",
+  "city": "Riom",
+  "country": "France 🇫🇷",
+  "stars": 3,
+  "property_type": "Boutique Residence",
+  "rating": 7.8,
+  "review_count": 817,
+  "rating_badge": "Very Good 👍",
+  "address": "La Caravelle, 63200 Riom, Puy-de-Dôme, France",
+  "lat": 45.8762,
+  "lon": 3.1017,
+  "distance_center_km": 1.6,
+  "amenities": [
+    "Free High-Speed WiFi 📶",
+    "Private En-suite Bathroom 🚿",
+    "Air Conditioning ❄️",
+    "Free Secure Parking 🚗",
+    "Buffet Breakfast Option 🥐",
+    "Soundproof Rooms 🤫"
+  ],
+  "base_price_usd_per_night": 69.1,
+  "base_price_converted": "€64",
+  "image_url": "https://cf.bstatic.com/xdata/images/hotel/max1024x768/873545751.webp?k=5cd656eded034f5fb51358c5872090500b50d5d7fc0d64d16f2759c5df6d8d7f&o=",
+  "booking_url": "https://www.booking.com/hotel/fr/la-caravelle-riom.fr.html",
+  "description": "L’établissement La Caravelle se trouve à Riom, à respectivement 13 km et 14 km de ces lieux d’intérêt : Centre d'expositions et des congrès Polydome et Gare de Clermont-Ferrand.",
+  "source": "Live Booking.com",
+  "room_types_available": [
+    {
+      "name": "Standard Double Room",
+      "size_sqm": 22,
+      "bed": "1 Large Double Bed",
+      "cancellation": "Free cancellation until 48h before",
+      "nightly_rate": "€64"
+    },
+    {
+      "name": "Comfort Superior King Room",
+      "size_sqm": 28,
+      "bed": "1 Extra-Large King Bed",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€79"
+    },
+    {
+      "name": "Executive Family Suite",
+      "size_sqm": 45,
+      "bed": "1 King Bed + 2 Single Beds",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€105"
+    }
+  ],
+  "sub_ratings": {
+    "Cleanliness": 8.0,
+    "Location": 7.6,
+    "Staff": 8.1,
+    "Comfort": 7.9,
+    "Value for Money": 7.6
+  },
+  "sample_quote": {
+    "checkin": "2026-10-14",
+    "checkout": "2026-10-17",
+    "nights": 3,
+    "room_name": "Standard Double Room",
+    "nightly_rate": "€64",
+    "subtotal": "€191",
+    "taxes_and_fees": "€39",
+    "grand_total": "€229",
+    "currency": "EUR (€)"
+  }
+}
