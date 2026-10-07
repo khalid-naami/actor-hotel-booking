@@ -1,0 +1,70 @@
+{
+  "id": "RIOM-012",
+  "name": "Première Classe Clermont Ferrand NordHôtel à Clermont-Ferrand",
+  "city": "Riom",
+  "country": "France 🇫🇷",
+  "stars": 3,
+  "property_type": "Urban Hotel",
+  "rating": 6.5,
+  "review_count": 2942,
+  "rating_badge": "Very Good 👍",
+  "address": "Première Classe Clermont Ferrand NordHôtel à Clermont-Ferrand, 63200 Riom, Puy-de-Dôme, France",
+  "lat": 45.8912,
+  "lon": 3.1117,
+  "distance_center_km": 2.6,
+  "amenities": [
+    "Free High-Speed WiFi 📶",
+    "Private En-suite Bathroom 🚿",
+    "Air Conditioning ❄️",
+    "Free Secure Parking 🚗",
+    "Buffet Breakfast Option 🥐",
+    "Soundproof Rooms 🤫"
+  ],
+  "base_price_usd_per_night": 75.6,
+  "base_price_converted": "€70",
+  "image_url": "https://cf.bstatic.com/xdata/images/hotel/270x270/829570966.jpg?k=e63ad6d521579cd36362c7e71b6e8f44bc8ce780ce95b7a159e7372e00279e67&o=",
+  "booking_url": "https://www.booking.com/hotel/fr/premiere-classe-clermont-ferrand-nord.fr.html",
+  "description": "Établissement hôtelier de qualité supérieure situé à Riom, Auvergne.",
+  "source": "Live Booking.com",
+  "room_types_available": [
+    {
+      "name": "Standard Double Room",
+      "size_sqm": 22,
+      "bed": "1 Large Double Bed",
+      "cancellation": "Free cancellation until 48h before",
+      "nightly_rate": "€70"
+    },
+    {
+      "name": "Comfort Superior King Room",
+      "size_sqm": 28,
+      "bed": "1 Extra-Large King Bed",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€87"
+    },
+    {
+      "name": "Executive Family Suite",
+      "size_sqm": 45,
+      "bed": "1 King Bed + 2 Single Beds",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€115"
+    }
+  ],
+  "sub_ratings": {
+    "Cleanliness": 6.6,
+    "Location": 6.4,
+    "Staff": 6.8,
+    "Comfort": 6.6,
+    "Value for Money": 6.3
+  },
+  "sample_quote": {
+    "checkin": "2026-10-14",
+    "checkout": "2026-10-17",
+    "nights": 3,
+    "room_name": "Standard Double Room",
+    "nightly_rate": "€70",
+    "subtotal": "€209",
+    "taxes_and_fees": "€41",
+    "grand_total": "€250",
+    "currency": "EUR (€)"
+  }
+}
