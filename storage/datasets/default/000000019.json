@@ -1,0 +1,70 @@
+{
+  "id": "RIOM-019",
+  "name": "The Originals Access, Hôtel Clermont-Ferrand NordHôtel à Châteaugay",
+  "city": "Riom",
+  "country": "France 🇫🇷",
+  "stars": 3,
+  "property_type": "Urban Hotel",
+  "rating": 7.9,
+  "review_count": 452,
+  "rating_badge": "Very Good 👍",
+  "address": "The Originals Access, Hôtel Clermont-Ferrand NordHôtel à Châteaugay, 63200 Riom, Puy-de-Dôme, France",
+  "lat": 45.9122,
+  "lon": 3.1257,
+  "distance_center_km": 4.0,
+  "amenities": [
+    "Free High-Speed WiFi 📶",
+    "Private En-suite Bathroom 🚿",
+    "Air Conditioning ❄️",
+    "Free Secure Parking 🚗",
+    "Buffet Breakfast Option 🥐",
+    "Soundproof Rooms 🤫"
+  ],
+  "base_price_usd_per_night": 65.9,
+  "base_price_converted": "€61",
+  "image_url": "https://cf.bstatic.com/xdata/images/hotel/270x270/677720675.jpg?k=5189e9d2ca968111d93ba130725703bca1efe85bf358ecbc169931ffd7e834c6&o=",
+  "booking_url": "https://www.booking.com/hotel/fr/balladins-clermont-ferrand-express.fr.html",
+  "description": "Établissement hôtelier de qualité supérieure situé à Riom, Auvergne.",
+  "source": "Live Booking.com",
+  "room_types_available": [
+    {
+      "name": "Standard Double Room",
+      "size_sqm": 22,
+      "bed": "1 Large Double Bed",
+      "cancellation": "Free cancellation until 48h before",
+      "nightly_rate": "€61"
+    },
+    {
+      "name": "Comfort Superior King Room",
+      "size_sqm": 28,
+      "bed": "1 Extra-Large King Bed",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€76"
+    },
+    {
+      "name": "Executive Family Suite",
+      "size_sqm": 45,
+      "bed": "1 King Bed + 2 Single Beds",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€100"
+    }
+  ],
+  "sub_ratings": {
+    "Cleanliness": 8.1,
+    "Location": 7.7,
+    "Staff": 8.2,
+    "Comfort": 8.0,
+    "Value for Money": 7.7
+  },
+  "sample_quote": {
+    "checkin": "2026-10-14",
+    "checkout": "2026-10-17",
+    "nights": 3,
+    "room_name": "Standard Double Room",
+    "nightly_rate": "€61",
+    "subtotal": "€182",
+    "taxes_and_fees": "€37",
+    "grand_total": "€219",
+    "currency": "EUR (€)"
+  }
+}
