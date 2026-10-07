@@ -1,0 +1,70 @@
+{
+  "id": "RIOM-014",
+  "name": "Hôtel de ParisHôtel à Châtel-Guyon",
+  "city": "Riom",
+  "country": "France 🇫🇷",
+  "stars": 3,
+  "property_type": "Urban Hotel",
+  "rating": 8.0,
+  "review_count": 636,
+  "rating_badge": "Very Good 👍",
+  "address": "Hôtel de ParisHôtel à Châtel-Guyon, 63200 Riom, Puy-de-Dôme, France",
+  "lat": 45.8972,
+  "lon": 3.1157,
+  "distance_center_km": 3.0,
+  "amenities": [
+    "Free High-Speed WiFi 📶",
+    "Private En-suite Bathroom 🚿",
+    "Air Conditioning ❄️",
+    "Free Secure Parking 🚗",
+    "Buffet Breakfast Option 🥐",
+    "Soundproof Rooms 🤫"
+  ],
+  "base_price_usd_per_night": 77.2,
+  "base_price_converted": "€71",
+  "image_url": "https://cf.bstatic.com/xdata/images/hotel/270x270/193978429.jpg?k=972bba8856c36fd5c6e63d2ce9341e0684e916401d9286a64a681efd7f52541f&o=",
+  "booking_url": "https://www.booking.com/hotel/fr/hotel-de-paris-chatel-guyon.fr.html",
+  "description": "Établissement hôtelier de qualité supérieure situé à Riom, Auvergne.",
+  "source": "Live Booking.com",
+  "room_types_available": [
+    {
+      "name": "Standard Double Room",
+      "size_sqm": 22,
+      "bed": "1 Large Double Bed",
+      "cancellation": "Free cancellation until 48h before",
+      "nightly_rate": "€71"
+    },
+    {
+      "name": "Comfort Superior King Room",
+      "size_sqm": 28,
+      "bed": "1 Extra-Large King Bed",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€89"
+    },
+    {
+      "name": "Executive Family Suite",
+      "size_sqm": 45,
+      "bed": "1 King Bed + 2 Single Beds",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€117"
+    }
+  ],
+  "sub_ratings": {
+    "Cleanliness": 8.2,
+    "Location": 7.8,
+    "Staff": 8.3,
+    "Comfort": 8.1,
+    "Value for Money": 7.8
+  },
+  "sample_quote": {
+    "checkin": "2026-10-14",
+    "checkout": "2026-10-17",
+    "nights": 3,
+    "room_name": "Standard Double Room",
+    "nightly_rate": "€71",
+    "subtotal": "€213",
+    "taxes_and_fees": "€41",
+    "grand_total": "€255",
+    "currency": "EUR (€)"
+  }
+}
