@@ -1,0 +1,70 @@
+{
+  "id": "RIOM-004",
+  "name": "Kyriad Clermont Ferrand Nord",
+  "city": "Riom",
+  "country": "France 🇫🇷",
+  "stars": 4,
+  "property_type": "Boutique Residence",
+  "rating": 8.6,
+  "review_count": 3299,
+  "rating_badge": "Superb ✨",
+  "address": "Kyriad Clermont Ferrand Nord, 63200 Riom, Puy-de-Dôme, France",
+  "lat": 45.8672,
+  "lon": 3.0957,
+  "distance_center_km": 1.0,
+  "amenities": [
+    "Free High-Speed WiFi 📶",
+    "Private En-suite Bathroom 🚿",
+    "Air Conditioning ❄️",
+    "Free Secure Parking 🚗",
+    "Buffet Breakfast Option 🥐",
+    "Soundproof Rooms 🤫"
+  ],
+  "base_price_usd_per_night": 121.0,
+  "base_price_converted": "€111",
+  "image_url": "https://cf.bstatic.com/xdata/images/hotel/max1024x768/822354637.webp?k=86894585af9e8ad716e569fd5d43e17ae52faa47626474a33e65b69a623f2cdd&o=",
+  "booking_url": "https://www.booking.com/hotel/fr/anemotel.fr.html",
+  "description": "Situé à Riom, à 2 minutes en voiture de l'autoroute A71, le Kyriad Clermont Ferrand Nord - Riom propose des hébergements, une connexion Wi-Fi gratuite, un jardin, un bar et un restaurant servant une...",
+  "source": "Live Booking.com",
+  "room_types_available": [
+    {
+      "name": "Standard Double Room",
+      "size_sqm": 22,
+      "bed": "1 Large Double Bed",
+      "cancellation": "Free cancellation until 48h before",
+      "nightly_rate": "€111"
+    },
+    {
+      "name": "Comfort Superior King Room",
+      "size_sqm": 28,
+      "bed": "1 Extra-Large King Bed",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€139"
+    },
+    {
+      "name": "Executive Family Suite",
+      "size_sqm": 45,
+      "bed": "1 King Bed + 2 Single Beds",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€184"
+    }
+  ],
+  "sub_ratings": {
+    "Cleanliness": 8.8,
+    "Location": 8.4,
+    "Staff": 8.9,
+    "Comfort": 8.7,
+    "Value for Money": 8.3
+  },
+  "sample_quote": {
+    "checkin": "2026-10-14",
+    "checkout": "2026-10-17",
+    "nights": 3,
+    "room_name": "Standard Double Room",
+    "nightly_rate": "€111",
+    "subtotal": "€334",
+    "taxes_and_fees": "€57",
+    "grand_total": "€391",
+    "currency": "EUR (€)"
+  }
+}
