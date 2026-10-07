@@ -1,0 +1,70 @@
+{
+  "id": "RIOM-001",
+  "name": "B&B HOTEL Clermont-Ferrand Nord",
+  "city": "Riom",
+  "country": "France 🇫🇷",
+  "stars": 4,
+  "property_type": "Urban Hotel",
+  "rating": 8.6,
+  "review_count": 2167,
+  "rating_badge": "Superb ✨",
+  "address": "B&B HOTEL Clermont-Ferrand Nord, 63200 Riom, Puy-de-Dôme, France",
+  "lat": 45.8582,
+  "lon": 3.0897,
+  "distance_center_km": 0.4,
+  "amenities": [
+    "Free High-Speed WiFi 📶",
+    "Private En-suite Bathroom 🚿",
+    "Air Conditioning ❄️",
+    "Free Secure Parking 🚗",
+    "Buffet Breakfast Option 🥐",
+    "Soundproof Rooms 🤫"
+  ],
+  "base_price_usd_per_night": 67.1,
+  "base_price_converted": "€62",
+  "image_url": "https://cf.bstatic.com/xdata/images/hotel/max1024x768/841066122.webp?k=9a08d2a11aa6ef6ae3be115f91df7668a32ba6fa6e9dee33a30d563943ddc398&o=",
+  "booking_url": "https://www.booking.com/hotel/fr/b-amp-b-riom.fr.html",
+  "description": "Situé à Riom, le B&B HOTEL Clermont-Ferrand Nord Riom propose une connexion Wi-Fi haut débit gratuite. Le parcours de golf de Riom vous attend à 300 mètres.",
+  "source": "Live Booking.com",
+  "room_types_available": [
+    {
+      "name": "Standard Double Room",
+      "size_sqm": 22,
+      "bed": "1 Large Double Bed",
+      "cancellation": "Free cancellation until 48h before",
+      "nightly_rate": "€62"
+    },
+    {
+      "name": "Comfort Superior King Room",
+      "size_sqm": 28,
+      "bed": "1 Extra-Large King Bed",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€77"
+    },
+    {
+      "name": "Executive Family Suite",
+      "size_sqm": 45,
+      "bed": "1 King Bed + 2 Single Beds",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€102"
+    }
+  ],
+  "sub_ratings": {
+    "Cleanliness": 8.8,
+    "Location": 8.4,
+    "Staff": 8.9,
+    "Comfort": 8.7,
+    "Value for Money": 8.3
+  },
+  "sample_quote": {
+    "checkin": "2026-10-14",
+    "checkout": "2026-10-17",
+    "nights": 3,
+    "room_name": "Standard Double Room",
+    "nightly_rate": "€62",
+    "subtotal": "€185",
+    "taxes_and_fees": "€38",
+    "grand_total": "€223",
+    "currency": "EUR (€)"
+  }
+}
