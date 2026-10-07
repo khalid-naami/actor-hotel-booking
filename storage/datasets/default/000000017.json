@@ -1,0 +1,70 @@
+{
+  "id": "RIOM-017",
+  "name": "Logis Hôtel du CommerceHôtel à Volvic",
+  "city": "Riom",
+  "country": "France 🇫🇷",
+  "stars": 4,
+  "property_type": "Urban Hotel",
+  "rating": 8.5,
+  "review_count": 570,
+  "rating_badge": "Superb ✨",
+  "address": "Logis Hôtel du CommerceHôtel à Volvic, 63200 Riom, Puy-de-Dôme, France",
+  "lat": 45.9062,
+  "lon": 3.1217,
+  "distance_center_km": 3.6,
+  "amenities": [
+    "Free High-Speed WiFi 📶",
+    "Private En-suite Bathroom 🚿",
+    "Air Conditioning ❄️",
+    "Free Secure Parking 🚗",
+    "Buffet Breakfast Option 🥐",
+    "Soundproof Rooms 🤫"
+  ],
+  "base_price_usd_per_night": 98.1,
+  "base_price_converted": "€90",
+  "image_url": "https://cf.bstatic.com/xdata/images/hotel/270x270/808611273.jpg?k=5133467e5b6194b5b37e82b9f43f1afce1e88544b3239aa412393eac08c5e776&o=",
+  "booking_url": "https://www.booking.com/hotel/fr/du-commerce-volvic.fr.html",
+  "description": "Établissement hôtelier de qualité supérieure situé à Riom, Auvergne.",
+  "source": "Live Booking.com",
+  "room_types_available": [
+    {
+      "name": "Standard Double Room",
+      "size_sqm": 22,
+      "bed": "1 Large Double Bed",
+      "cancellation": "Free cancellation until 48h before",
+      "nightly_rate": "€90"
+    },
+    {
+      "name": "Comfort Superior King Room",
+      "size_sqm": 28,
+      "bed": "1 Extra-Large King Bed",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€113"
+    },
+    {
+      "name": "Executive Family Suite",
+      "size_sqm": 45,
+      "bed": "1 King Bed + 2 Single Beds",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€149"
+    }
+  ],
+  "sub_ratings": {
+    "Cleanliness": 8.7,
+    "Location": 8.3,
+    "Staff": 8.8,
+    "Comfort": 8.6,
+    "Value for Money": 8.2
+  },
+  "sample_quote": {
+    "checkin": "2026-10-14",
+    "checkout": "2026-10-17",
+    "nights": 3,
+    "room_name": "Standard Double Room",
+    "nightly_rate": "€90",
+    "subtotal": "€271",
+    "taxes_and_fees": "€49",
+    "grand_total": "€320",
+    "currency": "EUR (€)"
+  }
+}
