@@ -1,0 +1,70 @@
+{
+  "id": "RIOM-025",
+  "name": "Hôtel café des coursHôtel à Cébazat",
+  "city": "Riom",
+  "country": "France 🇫🇷",
+  "stars": 3,
+  "property_type": "Urban Hotel",
+  "rating": 5.2,
+  "review_count": 38,
+  "rating_badge": "Very Good 👍",
+  "address": "Hôtel café des coursHôtel à Cébazat, 63200 Riom, Puy-de-Dôme, France",
+  "lat": 45.9302,
+  "lon": 3.1377,
+  "distance_center_km": 5.2,
+  "amenities": [
+    "Free High-Speed WiFi 📶",
+    "Private En-suite Bathroom 🚿",
+    "Air Conditioning ❄️",
+    "Free Secure Parking 🚗",
+    "Buffet Breakfast Option 🥐",
+    "Soundproof Rooms 🤫"
+  ],
+  "base_price_usd_per_night": 37.9,
+  "base_price_converted": "€35",
+  "image_url": "https://cf.bstatic.com/xdata/images/hotel/270x270/852762658.jpg?k=d7fc84302b4da1a004e1633d3a152867cebac0f6d0d88d10fe55ae1267adfcdd&o=",
+  "booking_url": "https://www.booking.com/hotel/fr/cafe-des-cours.fr.html",
+  "description": "Établissement hôtelier de qualité supérieure situé à Riom, Auvergne.",
+  "source": "Live Booking.com",
+  "room_types_available": [
+    {
+      "name": "Standard Double Room",
+      "size_sqm": 22,
+      "bed": "1 Large Double Bed",
+      "cancellation": "Free cancellation until 48h before",
+      "nightly_rate": "€35"
+    },
+    {
+      "name": "Comfort Superior King Room",
+      "size_sqm": 28,
+      "bed": "1 Extra-Large King Bed",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€44"
+    },
+    {
+      "name": "Executive Family Suite",
+      "size_sqm": 45,
+      "bed": "1 King Bed + 2 Single Beds",
+      "cancellation": "Free cancellation",
+      "nightly_rate": "€58"
+    }
+  ],
+  "sub_ratings": {
+    "Cleanliness": 5.3,
+    "Location": 5.1,
+    "Staff": 5.4,
+    "Comfort": 5.3,
+    "Value for Money": 5.0
+  },
+  "sample_quote": {
+    "checkin": "2026-10-14",
+    "checkout": "2026-10-17",
+    "nights": 3,
+    "room_name": "Standard Double Room",
+    "nightly_rate": "€35",
+    "subtotal": "€105",
+    "taxes_and_fees": "€27",
+    "grand_total": "€132",
+    "currency": "EUR (€)"
+  }
+}
