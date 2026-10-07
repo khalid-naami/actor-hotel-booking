@@ -345,8 +345,36 @@ HOTELS_DATABASE: List[Dict[str, Any]] = [
     }
 ]
 
+# Load Riom hotels from scraper
+try:
+    from src.booking_scraper import get_fallback_riom_hotels, fetch_booking_hotels
+    riom_hotels = get_fallback_riom_hotels()
+    for rh in riom_hotels:
+        if not any(h["id"] == rh["id"] for h in HOTELS_DATABASE):
+            HOTELS_DATABASE.append(rh)
+except Exception as e:
+    pass
+
+
 class HotelsManager:
-    """Queries, filters, and searches the global hotel catalog."""
+    """Queries, filters, and searches the global hotel catalog with live Booking.com sync."""
+
+    @staticmethod
+    def sync_live_booking(url_or_slug: str = "https://www.booking.com/city/fr/riom.fr.html", currency: str = "EUR") -> List[Dict[str, Any]]:
+        """Fetch fresh live data from Booking.com and update catalog."""
+        try:
+            from src.booking_scraper import fetch_booking_hotels
+            live_hotels = fetch_booking_hotels(url_or_slug=url_or_slug, currency=currency, use_cache=False)
+            if live_hotels:
+                # Update HOTELS_DATABASE
+                global HOTELS_DATABASE
+                # Remove old Riom hotels if updating Riom
+                HOTELS_DATABASE = [h for h in HOTELS_DATABASE if not h.get("id", "").startswith("RIOM-")]
+                HOTELS_DATABASE.extend(live_hotels)
+                return live_hotels
+        except Exception as e:
+            print(f"Sync error: {e}")
+        return [h for h in HOTELS_DATABASE if h.get("city") == "Riom"]
 
     @staticmethod
     def get_destinations() -> List[str]:
@@ -358,7 +386,7 @@ class HotelsManager:
     def filter_hotels(
         destination: str = "All Destinations 🌍",
         max_price_usd: float = 3000.0,
-        min_stars: int = 4,
+        min_stars: int = 3,
         property_type: str = "All Types",
         required_amenity: Optional[str] = None,
         search_query: str = ""
@@ -372,14 +400,14 @@ class HotelsManager:
                 continue
             if h["base_price_usd"] > max_price_usd:
                 continue
-            if h["stars"] < min_stars:
+            if h.get("stars", 3) < min_stars:
                 continue
-            if property_type != "All Types" and h["property_type"] != property_type:
+            if property_type != "All Types" and h.get("property_type") != property_type:
                 continue
-            if required_amenity and required_amenity != "All Amenities" and required_amenity not in h["amenities"]:
+            if required_amenity and required_amenity != "All Amenities" and required_amenity not in h.get("amenities", []):
                 continue
             if q:
-                search_text = f"{h['name']} {h['city']} {h['country']} {h['property_type']}".lower()
+                search_text = f"{h.get('name', '')} {h.get('city', '')} {h.get('country', '')} {h.get('property_type', '')}".lower()
                 if q not in search_text:
                     continue
             results.append(h)
@@ -391,3 +419,4 @@ class HotelsManager:
             if h["id"] == hotel_id:
                 return h
         return None
+
