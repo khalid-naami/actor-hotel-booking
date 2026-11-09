@@ -1,16 +1,25 @@
 {
     "actorSpecification": 1,
-    "name": "hotel-booking-intelligence",
-    "title": "Global Hotel & Luxury Resort Intelligence",
-    "description": "Scrapes, filters and generates quotes for world-class hotels, riads, villas, and suites with multi-currency tax & voucher calculations.",
+    "name": "booking-ultimate-scraper",
+    "title": "Booking.com Ultimate Scraper (Hotels, Live Prices, Reviews & Rooms)",
+    "description": "Comprehensive all-in-one Booking.com scraper. Extracts Hotels & Resorts, Live Room Pricing across currencies, Review Scores & Breakdown, Coordinates, Amenities, Free Cancellation policies, and HD Image Galleries by destination or direct URL.",
     "version": "1.0.0",
     "meta": {
-        "template": "python-empty"
+        "templateId": "js-crawlee-playwright"
     },
     "dockerfile": "./Dockerfile",
     "input": "./input_schema.json",
     "storages": {
         "dataset": "./dataset_schema.json"
     },
-    "output": "./output_schema.json"
+    "output": "./output_schema.json",
+    "categories": [
+        "TRAVEL",
+        "E-COMMERCE",
+        "MARKETING",
+        "AI"
+    ],
+    "environmentVariables": {
+        "APIFY_DISABLE_BROWSER_SANDBOX": "1"
+    }
 }
