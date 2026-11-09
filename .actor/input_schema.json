@@ -1,104 +1,149 @@
 {
-    "title": "Hotel Booking & Booking.com Live Scraper Input",
+    "title": "Booking.com Ultimate Scraper Input Schema",
     "type": "object",
     "schemaVersion": 1,
     "properties": {
-        "bookingUrl": {
-            "title": "Booking.com Destination URL",
-            "type": "string",
-            "description": "Direct Booking.com city/region URL to live-scrape real-time hotel records, HD images, reviews, and rates.",
-            "default": "https://www.booking.com/city/fr/riom.fr.html",
-            "editor": "textfield"
-        },
         "destination": {
-            "title": "Destination City",
+            "title": "Destination",
             "type": "string",
-            "description": "City filter (e.g. Riom, Marrakech, Paris, Tokyo, Dubai, or 'All Destinations 🌍').",
-            "default": "Riom",
+            "description": "City, region, island, or landmark to search for on Booking.com (e.g. 'Paris', 'Dubai', 'London', 'New York').",
+            "editor": "textfield",
+            "prefill": "Paris"
+        },
+        "hotelUrls": {
+            "title": "Target Hotel / Search URLs",
+            "type": "array",
+            "description": "Optional list of specific Booking.com hotel URLs or custom search results URLs to scrape directly.",
+            "editor": "stringList",
+            "prefill": []
+        },
+        "checkin": {
+            "title": "Check-in Date (YYYY-MM-DD)",
+            "type": "string",
+            "description": "Arrival date in YYYY-MM-DD format (e.g. '2026-12-01'). Leave empty to automatically use 7 days from today.",
             "editor": "textfield"
         },
-        "liveScrape": {
-            "title": "Enable Live Booking.com Scraping",
-            "type": "boolean",
-            "description": "If true, connects directly to Booking.com using anti-bot bypass to retrieve live hotel prices, photos, and ratings.",
-            "default": true
-        },
-        "currency": {
-            "title": "Pricing Currency",
+        "checkout": {
+            "title": "Check-out Date (YYYY-MM-DD)",
             "type": "string",
-            "description": "Target currency for rate conversion and quotes.",
-            "default": "EUR (€)",
-            "editor": "select",
-            "enum": [
-                "EUR (€)",
-                "USD ($)",
-                "MAD (د.م.)",
-                "SAR (ر.س)",
-                "AED (د.إ)",
-                "GBP (£)",
-                "JPY (¥)"
-            ]
-        },
-        "maxPriceUsd": {
-            "title": "Maximum Price Per Night (USD)",
-            "type": "integer",
-            "description": "Upper budget threshold per night.",
-            "default": 2000,
-            "minimum": 30,
-            "maximum": 10000
-        },
-        "minStars": {
-            "title": "Minimum Star Rating",
-            "type": "integer",
-            "description": "Minimum hotel star rating (1 to 5 stars).",
-            "default": 3,
-            "minimum": 1,
-            "maximum": 5
-        },
-        "propertyType": {
-            "title": "Property Type",
-            "type": "string",
-            "description": "Filter by style of accommodation.",
-            "default": "All Types",
-            "editor": "select",
-            "enum": [
-                "All Types",
-                "Urban Hotel",
-                "Boutique Residence",
-                "Historic Palace",
-                "Boutique Riad",
-                "Luxury Resort",
-                "Private Villa"
-            ]
-        },
-        "checkinDaysFromNow": {
-            "title": "Check-in Offset (Days from Today)",
-            "type": "integer",
-            "description": "Number of days from now for sample reservation simulation.",
-            "default": 7,
-            "minimum": 0,
-            "maximum": 365
+            "description": "Departure date in YYYY-MM-DD format. Leave empty to use check-in + stayNights.",
+            "editor": "textfield"
         },
         "stayNights": {
-            "title": "Length of Stay (Nights)",
+            "title": "Stay Duration (Nights)",
             "type": "integer",
-            "description": "Number of consecutive nights to price.",
+            "description": "Number of nights to stay when check-out date is not explicitly specified.",
             "default": 3,
             "minimum": 1,
             "maximum": 30
         },
-        "searchQuery": {
-            "title": "Keyword Search",
-            "type": "string",
-            "description": "Search by hotel name, address, or landmark.",
-            "default": "",
-            "editor": "textfield"
+        "adults": {
+            "title": "Adults",
+            "type": "integer",
+            "description": "Number of adult guests.",
+            "default": 2,
+            "minimum": 1,
+            "maximum": 30
         },
-        "apiKey": {
-            "title": "Apify API Token / Custom Key",
+        "children": {
+            "title": "Children",
+            "type": "integer",
+            "description": "Number of children staying.",
+            "default": 0,
+            "minimum": 0,
+            "maximum": 10
+        },
+        "rooms": {
+            "title": "Rooms",
+            "type": "integer",
+            "description": "Number of rooms required.",
+            "default": 1,
+            "minimum": 1,
+            "maximum": 20
+        },
+        "currency": {
+            "title": "Currency Code",
             "type": "string",
-            "description": "Optional Apify API token or custom authentication key for MCP and programmatic triggers.",
-            "editor": "textfield"
+            "description": "Preferred currency for prices (e.g. USD, EUR, GBP, AED, SAR, CAD, AUD, JPY).",
+            "default": "USD",
+            "editor": "select",
+            "enum": [
+                "USD",
+                "EUR",
+                "GBP",
+                "AED",
+                "SAR",
+                "CAD",
+                "AUD",
+                "CHF",
+                "JPY",
+                "CNY"
+            ],
+            "enumTitles": [
+                "USD ($) - US Dollar",
+                "EUR (€) - Euro",
+                "GBP (£) - British Pound",
+                "AED (AED) - UAE Dirham",
+                "SAR (SAR) - Saudi Riyal",
+                "CAD (C$) - Canadian Dollar",
+                "AUD (A$) - Australian Dollar",
+                "CHF (CHF) - Swiss Franc",
+                "JPY (¥) - Japanese Yen",
+                "CNY (¥) - Chinese Yuan"
+            ]
+        },
+        "minRating": {
+            "title": "Minimum Review Rating",
+            "type": "number",
+            "description": "Filter results by minimum overall review score (e.g. 7.0 for Good, 8.0 for Very Good, 9.0 for Superb). Set to 0 to disable.",
+            "default": 0,
+            "minimum": 0,
+            "maximum": 10
+        },
+        "minStars": {
+            "title": "Minimum Star Rating",
+            "type": "integer",
+            "description": "Filter hotels by minimum star rating (1 to 5 stars). Set to 0 to disable.",
+            "default": 0,
+            "minimum": 0,
+            "maximum": 5
+        },
+        "sortBy": {
+            "title": "Sort Results By",
+            "type": "string",
+            "description": "Order of hotel results.",
+            "default": "popularity",
+            "editor": "select",
+            "enum": [
+                "popularity",
+                "price_asc",
+                "review_score",
+                "distance"
+            ],
+            "enumTitles": [
+                "Popularity (Top Picks)",
+                "Price (Lowest first)",
+                "Review Score & Price",
+                "Distance from City Center"
+            ]
+        },
+        "maxHotels": {
+            "title": "Maximum Hotels to Scrape",
+            "type": "integer",
+            "description": "Maximum number of hotel properties to extract.",
+            "default": 50,
+            "minimum": 1,
+            "maximum": 1000
+        },
+        "proxyConfiguration": {
+            "title": "Proxy Configuration",
+            "type": "object",
+            "description": "Apify Proxy (RESIDENTIAL recommended for Booking.com to ensure high success rates).",
+            "editor": "proxy",
+            "default": {
+                "useApifyProxy": true
+            }
         }
-    }
+    },
+    "required": []
 }
