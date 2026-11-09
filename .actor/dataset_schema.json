@@ -3,45 +3,137 @@
     "fields": {
         "type": "object",
         "properties": {
+            "type": {
+                "type": "string",
+                "title": "Entity Type"
+            },
             "id": {
                 "type": "string",
-                "title": "Hotel ID"
+                "title": "Hotel ID / Slug"
             },
             "name": {
                 "type": "string",
-                "title": "Hotel Name"
+                "title": "Hotel / Property Name"
+            },
+            "url": {
+                "type": "string",
+                "title": "Booking.com Hotel URL"
+            },
+            "destination": {
+                "type": "string",
+                "title": "Destination Searched"
+            },
+            "price": {
+                "type": "string",
+                "title": "Total Price (Formatted)"
+            },
+            "priceNumeric": {
+                "type": "number",
+                "title": "Total Price (Numeric)"
+            },
+            "currency": {
+                "type": "string",
+                "title": "Currency Code"
+            },
+            "pricePerNight": {
+                "type": "number",
+                "title": "Price Per Night"
+            },
+            "nights": {
+                "type": "integer",
+                "title": "Number of Nights"
+            },
+            "checkin": {
+                "type": "string",
+                "title": "Check-in Date (YYYY-MM-DD)"
+            },
+            "checkout": {
+                "type": "string",
+                "title": "Check-out Date (YYYY-MM-DD)"
+            },
+            "rating": {
+                "type": "number",
+                "title": "Overall Review Score (0 - 10)"
+            },
+            "ratingText": {
+                "type": "string",
+                "title": "Review Description (e.g. Superb, Fabulous)"
+            },
+            "reviewsCount": {
+                "type": "integer",
+                "title": "Total Reviews Count"
+            },
+            "reviewSubscores": {
+                "type": "object",
+                "title": "Review Category Subscores"
+            },
+            "stars": {
+                "type": "integer",
+                "title": "Star Rating (1 - 5)"
+            },
+            "propertyType": {
+                "type": "string",
+                "title": "Property Type"
+            },
+            "address": {
+                "type": "string",
+                "title": "Full Address"
             },
             "city": {
                 "type": "string",
-                "title": "Destination City"
+                "title": "City"
             },
             "country": {
                 "type": "string",
                 "title": "Country"
             },
-            "stars": {
-                "type": "integer",
-                "title": "Star Rating"
-            },
-            "property_type": {
+            "distanceFromCenter": {
                 "type": "string",
-                "title": "Property Type"
+                "title": "Distance from City Center"
             },
-            "rating": {
+            "latitude": {
                 "type": "number",
-                "title": "Guest Review Score"
+                "title": "Latitude Coordinate"
             },
-            "base_price_usd_per_night": {
+            "longitude": {
                 "type": "number",
-                "title": "Base Price (USD)"
+                "title": "Longitude Coordinate"
             },
-            "base_price_converted": {
+            "roomType": {
                 "type": "string",
-                "title": "Base Price Formatted"
+                "title": "Room / Unit Type"
             },
-            "sample_quote": {
-                "type": "object",
-                "title": "Booking Quote Breakdown"
+            "hasFreeCancellation": {
+                "type": "boolean",
+                "title": "Free Cancellation Available"
+            },
+            "isBreakfastIncluded": {
+                "type": "boolean",
+                "title": "Breakfast Included"
+            },
+            "noPrepayment": {
+                "type": "boolean",
+                "title": "No Prepayment Needed"
+            },
+            "facilities": {
+                "type": "array",
+                "title": "Popular Facilities / Amenities"
+            },
+            "description": {
+                "type": "string",
+                "title": "Property Description"
+            },
+            "imageUrl": {
+                "type": "string",
+                "title": "Cover Image URL"
+            },
+            "imageUrls": {
+                "type": "array",
+                "title": "HD Image Gallery URLs"
+            },
+            "scrapedAt": {
+                "type": "string",
+                "title": "Scraped At Timestamp"
             }
         }
     }
