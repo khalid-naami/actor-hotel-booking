@@ -1,0 +1,31 @@
+{
+  "name": "actor-booking-scraper",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Booking.com Ultimate All-in-One Scraper on Apify. Extracts Hotels, Live Pricing, Review Scores, Room Details, Amenities, and Addresses by destination or URL.",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "test": "node src/main.js"
+  },
+  "keywords": [
+    "apify",
+    "actor",
+    "booking",
+    "booking-scraper",
+    "hotels",
+    "travel",
+    "pricing",
+    "reviews",
+    "crawlee",
+    "playwright"
+  ],
+  "author": "Khalil",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "apify": "^3.2.6",
+    "crawlee": "^3.12.2",
+    "got-scraping": "^4.0.7",
+    "playwright": "^1.49.1"
+  }
+}
