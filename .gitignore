@@ -1,0 +1,8 @@
+node_modules/
+storage/
+.apify/
+dist/
+.DS_Store
+*.log
+__pycache__/
+*.pyc
