@@ -1,17 +1,17 @@
 {
     "actorOutputSchemaVersion": 1,
-    "title": "Hotel & Luxury Stays Intelligence Output",
+    "title": "Booking.com Ultimate Scraper Output",
     "properties": {
         "results": {
             "type": "string",
-            "title": "Dataset Items",
-            "description": "Full hotel inventory, room classes, amenities, and quotes",
+            "title": "Dataset Records",
+            "description": "Scraped Booking.com hotels, live pricing, room details, reviews, and amenities",
             "template": "{{links.apiDefaultDatasetUrl}}/items"
         },
         "overview": {
             "type": "string",
-            "title": "Summary Payload",
-            "description": "Summary report stored in Key-Value store",
+            "title": "Executive Summary Payload",
+            "description": "High-level summary report and execution metrics stored in Key-Value store",
             "template": "{{links.apiDefaultKeyValueStoreUrl}}/records/OUTPUT"
         }
     }
