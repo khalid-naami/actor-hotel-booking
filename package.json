@@ -6,7 +6,7 @@
   "main": "src/main.js",
   "scripts": {
     "start": "node src/main.js",
-    "test": "node src/main.js"
+    "test": "node --check src/main.js && node --check src/extractors.js"
   },
   "keywords": [
     "apify",
@@ -24,8 +24,9 @@
   "license": "Apache-2.0",
   "dependencies": {
     "apify": "^3.2.6",
+    "cheerio": "^1.0.0",
     "crawlee": "^3.12.2",
     "got-scraping": "^4.0.7",
-    "playwright": "^1.49.1"
+    "playwright": "1.65.0"
   }
 }
