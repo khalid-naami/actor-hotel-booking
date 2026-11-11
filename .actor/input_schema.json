@@ -8,6 +8,7 @@
             "type": "string",
             "description": "City, region, island, or landmark to search for on Booking.com (e.g. 'Paris', 'Dubai', 'London', 'New York').",
             "editor": "textfield",
+            "default": "Paris",
             "prefill": "Paris"
         },
         "hotelUrls": {
@@ -138,8 +139,11 @@
         "proxyConfiguration": {
             "title": "Proxy Configuration",
             "type": "object",
-            "description": "Apify Proxy (RESIDENTIAL recommended for Booking.com to ensure high success rates).",
+            "description": "Apify Proxy configuration. Select RESIDENTIAL or UNBLOCKER for Booking.com (default Datacenter IPs are frequently challenged by Booking AWS WAF).",
             "editor": "proxy",
+            "prefill": {
+                "useApifyProxy": true
+            },
             "default": {
                 "useApifyProxy": true
             }
