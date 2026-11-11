@@ -1,247 +1,556 @@
 import { Actor } from 'apify';
 import { gotScraping } from 'got-scraping';
-import { PlaywrightCrawler, log } from 'crawlee';
+import { log } from 'crawlee';
+import { chromium } from 'playwright';
 import {
+    cleanInputString,
     resolveStayDates,
+    parsePlaywrightProxy,
+    detectBookingBlock,
+    countPropertyCards,
     parseSearchResultsHtml,
-    parseHotelDetailPage
+    parseHotelDetailPage,
 } from './extractors.js';
 
 await Actor.init();
 
-const input = (await Actor.getInput()) || {};
-const {
-    destination = 'Paris',
-    hotelUrls = [],
-    checkin: checkinInput = '',
-    checkout: checkoutInput = '',
-    stayNights = 3,
-    adults = 2,
-    children = 0,
-    rooms = 1,
-    currency = 'USD',
-    minRating = 0,
-    minStars = 0,
-    sortBy = 'popularity',
-    maxHotels = 50,
-    proxyConfiguration
-} = input;
+let hasFailed = false;
+let pwSession = null;
 
-// Resolve Dates
-const { checkin, checkout, nights } = resolveStayDates(checkinInput, checkoutInput, stayNights);
+try {
+    const input = (await Actor.getInput()) || {};
+    const {
+        destination = 'Paris',
+        hotelUrls = [],
+        checkin: checkinInput = '',
+        checkout: checkoutInput = '',
+        stayNights = 3,
+        adults = 2,
+        children = 0,
+        rooms = 1,
+        currency = 'USD',
+        minRating = 0,
+        minStars = 0,
+        sortBy = 'popularity',
+        maxHotels = 50,
+        proxyConfiguration,
+    } = input;
 
-log.info('🚀 Starting Booking.com Ultimate Scraper...', {
-    destination,
-    checkin,
-    checkout,
-    nights,
-    adults,
-    rooms,
-    currency,
-    maxHotels
-});
+    const safeHotelUrls = (Array.isArray(hotelUrls) ? hotelUrls : [hotelUrls])
+        .map((u) => cleanInputString(String(u || ''), ''))
+        .filter(Boolean);
 
-const proxyConfig = proxyConfiguration ? await Actor.createProxyConfiguration(proxyConfiguration) : undefined;
+    const cleanDestination = cleanInputString(destination, '') || (safeHotelUrls.length === 0 ? 'Paris' : '');
+    const cleanCurrency = cleanInputString(currency, 'USD').toUpperCase();
+    const cleanSort = cleanInputString(sortBy, 'popularity');
+    const safeAdults = Math.max(1, Number(adults) || 2);
+    const safeChildren = Math.max(0, Number(children) || 0);
+    const safeRooms = Math.max(1, Number(rooms) || 1);
+    const safeMaxHotels = Math.max(1, Number(maxHotels) || 50);
+    const safeMinRating = Math.max(0, Number(minRating) || 0);
+    const safeMinStars = Math.max(0, Number(minStars) || 0);
 
-function buildHeaders() {
-    return {
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-        'Sec-Ch-Ua': '"Chromium";v="128", "Not;A=Brand";v="24", "Google Chrome";v="128"',
-        'Sec-Ch-Ua-Mobile': '?0',
-        'Sec-Ch-Ua-Platform': '"Windows"',
-        'Upgrade-Insecure-Requests': '1'
-    };
-}
+    // Resolve and validate check-in / check-out dates
+    const { checkin, checkout, nights, dateAdjusted } = resolveStayDates(checkinInput, checkoutInput, stayNights);
+    if (dateAdjusted) {
+        log.warning(`Stay dates adjusted to valid future range: checkin=${checkin}, checkout=${checkout} (${nights} nights).`);
+    }
 
-// Fast HTML fetcher with proxy
-async function fetchHtml(url) {
-    const proxyUrl = proxyConfig ? await proxyConfig.newUrl() : undefined;
-    const response = await gotScraping({
-        url,
-        headers: buildHeaders(),
-        proxyUrl,
-        timeout: { request: 30000 },
-        retry: { limit: 2 }
+    log.info('🚀 Starting Booking.com Ultimate Scraper...', {
+        destination: cleanDestination || '(direct URLs)',
+        directUrlsCount: safeHotelUrls.length,
+        checkin,
+        checkout,
+        nights,
+        adults: safeAdults,
+        children: safeChildren,
+        rooms: safeRooms,
+        currency: cleanCurrency,
+        maxHotels: safeMaxHotels,
     });
-    return response.body;
-}
 
-// Playwright crawler fallback for interactive/anti-bot pages
-async function fetchWithPlaywright(url) {
-    let content = '';
-    const crawler = new PlaywrightCrawler({
-        proxyConfiguration: proxyConfig,
-        maxRequestsPerCrawl: 1,
-        headless: true,
-        requestHandlerTimeoutSecs: 40,
-        async requestHandler({ page }) {
-            // Dismiss cookie consent banners
+    const proxyConfig = proxyConfiguration ? await Actor.createProxyConfiguration(proxyConfiguration) : undefined;
+    if (proxyConfig) {
+        log.info('Configured Apify Proxy successfully', {
+            groups: proxyConfig.groups || [],
+            countryCode: proxyConfig.countryCode || null,
+            isManInTheMiddle: Boolean(proxyConfig.isManInTheMiddle),
+        });
+    }
+
+    function formatDiagnostics(diag) {
+        if (!diag) return '';
+        const parts = [`status=${diag.statusCode}`, `len=${diag.htmlLength}`, `cards=${diag.cardsCount ?? 0}`];
+        if (diag.wafAction) parts.push(`waf=${diag.wafAction}`);
+        if (diag.location) parts.push(`location=${diag.location}`);
+        if (diag.title) parts.push(`title="${diag.title.slice(0, 80)}"`);
+        return ` [${parts.join(', ')}]`;
+    }
+
+    let httpSessionToken = {};
+    let preferPlaywright = false;
+
+    // Fast HTML fetcher with proxy and WAF/block detection
+    async function fetchHtml(url) {
+        const proxyUrl = proxyConfig ? await proxyConfig.newUrl() : undefined;
+        const response = await gotScraping({
+            url,
+            headers: {
+                'accept-language': 'en-US,en;q=0.9',
+                'accept-encoding': 'gzip, deflate, br',
+                'sec-fetch-site': 'none',
+            },
+            headerGeneratorOptions: {
+                browsers: [{ name: 'chrome' }],
+                operatingSystems: ['windows', 'linux'],
+            },
+            sessionToken: httpSessionToken,
+            proxyUrl,
+            timeout: { request: 30000 },
+            retry: { limit: 1 },
+            throwHttpErrors: false,
+        });
+
+        const blockCheck = detectBookingBlock(
+            response.body,
+            response.url || url,
+            response.statusCode,
+            response.headers,
+        );
+
+        if (blockCheck.blocked) {
+            httpSessionToken = {};
+            const err = new Error(`${blockCheck.message}${formatDiagnostics(blockCheck.diagnostics)}`);
+            err.reason = blockCheck.reason;
+            err.diagnostics = blockCheck.diagnostics;
+            throw err;
+        }
+
+        return {
+            html: response.body,
+            emptySearch: Boolean(blockCheck.emptySearch),
+            diagnostics: blockCheck.diagnostics,
+        };
+    }
+
+    async function safePageContent(page) {
+        for (let i = 0; i < 3; i++) {
             try {
-                const acceptBtn = page.locator('button#onetrust-accept-btn-handler, button:has-text("Accept"), button:has-text("Accept all")');
-                if (await acceptBtn.isVisible({ timeout: 2500 })) {
-                    await acceptBtn.click();
-                    await page.waitForTimeout(1000);
+                return await page.content();
+            } catch (err) {
+                if (i === 2) throw err;
+                await page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => {});
+                await page.waitForTimeout(500);
+            }
+        }
+        return '';
+    }
+
+    class PlaywrightSession {
+        constructor() {
+            this.browser = null;
+            this.context = null;
+            this.page = null;
+            this.lastDocStatus = 200;
+            this.lastDocHeaders = {};
+        }
+
+        async ensureReady() {
+            if (this.page && !this.page.isClosed()) return;
+
+            const attemptProxyUrl = proxyConfig ? await proxyConfig.newUrl() : undefined;
+            const hasXvfbDisplay = process.platform === 'linux' && Boolean(process.env.DISPLAY);
+
+            const launchOptions = {
+                headless: !hasXvfbDisplay,
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--disable-webgl',
+                    '--disable-3d-apis',
+                    '--disable-software-rasterizer',
+                    '--disable-extensions',
+                    '--no-first-run',
+                    '--mute-audio',
+                    '--ignore-certificate-errors',
+                    '--ignore-certificate-errors-spki-list',
+                    '--disable-blink-features=AutomationControlled',
+                ],
+            };
+            if (attemptProxyUrl) {
+                launchOptions.proxy = parsePlaywrightProxy(attemptProxyUrl);
+            }
+
+            this.browser = await chromium.launch(launchOptions);
+            const browserVersion = this.browser.version() || '147.0.0.0';
+            const cleanUserAgent = `Mozilla/5.0 (${process.platform === 'linux' ? 'X11; Linux x86_64' : 'Windows NT 10.0; Win64; x64'}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${browserVersion} Safari/537.36`;
+
+            this.context = await this.browser.newContext({
+                ignoreHTTPSErrors: true,
+                userAgent: cleanUserAgent,
+                locale: 'en-US',
+                viewport: { width: 1366, height: 768 },
+                extraHTTPHeaders: {
+                    'Accept-Language': 'en-US,en;q=0.9',
+                },
+            });
+
+            await this.context.addInitScript(() => {
+                Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+                Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+            });
+
+            this.page = await this.context.newPage();
+
+            // Abort only heavy binary media/fonts so Booking UI & WAF JS execute naturally
+            await this.page.route('**/*', (route) => {
+                const type = route.request().resourceType();
+                if (['media', 'font'].includes(type)) {
+                    return route.abort();
                 }
-            } catch (_) {}
+                return route.continue();
+            });
 
-            content = await page.content();
+            this.page.on('response', (res) => {
+                try {
+                    if (res.request().resourceType() === 'document' && /booking\.com/i.test(res.url())) {
+                        this.lastDocStatus = res.status();
+                        this.lastDocHeaders = res.headers();
+                    }
+                } catch {}
+            });
         }
-    });
-    await crawler.run([url]);
-    return content;
-}
 
-// Map sort order to Booking query param
-function getSortParam(sort) {
-    switch (sort) {
-        case 'price_asc': return '&order=price';
-        case 'review_score': return '&order=review_score_and_price';
-        case 'distance': return '&order=distance_from_search';
-        default: return '&order=popularity';
-    }
-}
+        async fetchPage(url) {
+            await this.ensureReady();
+            const page = this.page;
+            this.lastDocStatus = 200;
+            this.lastDocHeaders = {};
 
-const stats = {
-    totalHotels: 0,
-    totalPriceNumeric: 0,
-    validPriceCount: 0,
-    destinations: new Set(),
-    failed: 0
-};
+            const navResponse = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
 
-const searchParams = {
-    checkin,
-    checkout,
-    nights,
-    currency,
-    minRating,
-    minStars
-};
+            const targetSelector = '[data-testid="property-card"], [data-testid="property-card-container"], #hotellist_inner .sr_property_block, h2.pp-header__title, #hp_hotel_name, [data-testid="PropertyHeaderTitle"], #px-captcha, #challenge-container';
 
-// CASE 1: DIRECT HOTEL URLS PROVIDED
-if (Array.isArray(hotelUrls) && hotelUrls.length > 0) {
-    log.info(`🎯 Processing ${hotelUrls.length} direct Booking.com hotel URLs...`);
-
-    for (const rawUrl of hotelUrls) {
-        const url = rawUrl.trim();
-        if (!url) continue;
-
-        try {
-            log.info(`🏨 Scraping hotel page: ${url}`);
-            let html = '';
             try {
-                html = await fetchHtml(url);
-            } catch (err) {
-                log.warning(`⚠️ Fast HTTP failed for ${url} (${err.message}). Trying browser crawler...`);
-                html = await fetchWithPlaywright(url);
+                await page.waitForSelector(targetSelector, { timeout: 15000 });
+            } catch {
+                // Handle client-side reload if AWS WAF JS refreshed the document
+                await page.waitForLoadState('domcontentloaded', { timeout: 10000 }).catch(() => {});
+                await page.waitForSelector(targetSelector, { timeout: 10000 }).catch(() => {});
             }
 
-            const hotel = parseHotelDetailPage(html, url, searchParams);
-            if (hotel && hotel.name) {
-                hotel.checkin = checkin;
-                hotel.checkout = checkout;
-                hotel.nights = nights;
-                hotel.currency = currency;
-
-                await Actor.pushData(hotel);
-                stats.totalHotels++;
-                stats.destinations.add(hotel.city || destination);
-                log.info(`✅ Successfully scraped Hotel: "${hotel.name}" [Rating: ${hotel.rating || 'N/A'}, Stars: ${hotel.stars || 'N/A'}]`);
-            } else {
-                log.warning(`⚠️ Could not parse hotel details from ${url}`);
+            // Dismiss OneTrust cookie banner or Booking Genius sign-in modal if present
+            const dismissSelectors = [
+                '#onetrust-accept-btn-handler',
+                'button[aria-label="Dismiss sign-in info."]',
+                'button[aria-label="Dismiss sign in information."]',
+            ];
+            for (const sel of dismissSelectors) {
+                try {
+                    const btn = page.locator(sel).first();
+                    if (await btn.isVisible({ timeout: 1200 })) {
+                        await btn.click();
+                        await page.waitForTimeout(400);
+                    }
+                } catch {}
             }
-        } catch (err) {
-            log.error(`❌ Failed scraping hotel ${url}: ${err.message}`);
-            stats.failed++;
+
+            await page.evaluate(() => window.scrollBy(0, 600)).catch(() => {});
+            await page.waitForTimeout(900);
+
+            const html = await safePageContent(page);
+            const finalUrl = page.url();
+            const status = this.lastDocStatus || (navResponse ? navResponse.status() : 200);
+            const headers = Object.keys(this.lastDocHeaders).length > 0
+                ? this.lastDocHeaders
+                : (navResponse ? navResponse.headers() : {});
+
+            const blockCheck = detectBookingBlock(html, finalUrl, status, headers);
+            if (blockCheck.blocked) {
+                const diagSuffix = formatDiagnostics(blockCheck.diagnostics);
+                const err = new Error(
+                    `${blockCheck.message}${diagSuffix}. Try Apify Proxy group "RESIDENTIAL" or "UNBLOCKER".`
+                );
+                err.reason = blockCheck.reason;
+                err.diagnostics = blockCheck.diagnostics;
+                throw err;
+            }
+
+            return {
+                html,
+                emptySearch: Boolean(blockCheck.emptySearch),
+                diagnostics: blockCheck.diagnostics,
+            };
+        }
+
+        async close() {
+            await this.browser?.close().catch(() => {});
+            this.browser = null;
+            this.context = null;
+            this.page = null;
         }
     }
-}
 
-// CASE 2: SEARCH BY DESTINATION (CITY / REGION)
-else if (destination) {
-    log.info(`🔍 Searching Booking.com for destination: "${destination}"...`);
+    pwSession = new PlaywrightSession();
 
-    let offset = 0;
-    let hasMore = true;
-    const pageSize = 25;
-
-    while (stats.totalHotels < maxHotels && hasMore) {
-        const sortParam = getSortParam(sortBy);
-        const searchUrl = `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(destination)}&checkin=${checkin}&checkout=${checkout}&group_adults=${adults}&no_rooms=${rooms}&group_children=${children}&selected_currency=${currency}&offset=${offset}${sortParam}`;
-
-        log.info(`📜 Fetching page offset ${offset} (${stats.totalHotels}/${maxHotels} hotels scraped)...`);
-
-        try {
-            let html = '';
+    async function fetchWithFallback(url, label) {
+        if (!preferPlaywright) {
             try {
-                html = await fetchHtml(searchUrl);
-            } catch (err) {
-                log.warning(`⚠️ Fast HTTP failed at offset ${offset} (${err.message}). Trying browser crawler...`);
-                html = await fetchWithPlaywright(searchUrl);
+                return await fetchHtml(url);
+            } catch (httpErr) {
+                log.warning(`⚠️ Fast HTTP blocked/challenged for ${label} (${httpErr.message}). Trying Playwright browser fallback...`);
+                preferPlaywright = true;
             }
+        }
 
-            const hotels = parseSearchResultsHtml(html, destination, searchParams);
+        const maxPwAttempts = proxyConfig ? 2 : 1;
+        let lastPwErr = null;
 
-            if (!hotels || hotels.length === 0) {
-                log.info(`ℹ️ No more hotels found at offset ${offset}. Finishing search.`);
-                hasMore = false;
-                break;
+        for (let pwAttempt = 1; pwAttempt <= maxPwAttempts; pwAttempt++) {
+            try {
+                return await pwSession.fetchPage(url);
+            } catch (pwErr) {
+                lastPwErr = pwErr;
+                await pwSession.close();
+                if (pwAttempt < maxPwAttempts) {
+                    log.warning(`⚠️ Playwright attempt ${pwAttempt}/${maxPwAttempts} failed (${pwErr.message}). Retrying with a fresh proxy IP...`);
+                    await new Promise((r) => setTimeout(r, 1200));
+                }
             }
+        }
 
-            for (const h of hotels) {
-                if (stats.totalHotels >= maxHotels) {
+        throw lastPwErr;
+    }
+
+    function getSortParam(sort) {
+        switch (sort) {
+            case 'price_asc': return 'price';
+            case 'review_score': return 'review_score_and_price';
+            case 'distance': return 'distance_from_search';
+            default: return 'popularity';
+        }
+    }
+
+    function buildSearchUrl(destQuery, offset = 0) {
+        const u = new URL('https://www.booking.com/searchresults.html');
+        u.searchParams.set('ss', destQuery);
+        u.searchParams.set('checkin', checkin);
+        u.searchParams.set('checkout', checkout);
+        u.searchParams.set('group_adults', String(safeAdults));
+        u.searchParams.set('no_rooms', String(safeRooms));
+        u.searchParams.set('group_children', String(safeChildren));
+        for (let i = 0; i < safeChildren; i++) {
+            u.searchParams.append('age', '8');
+        }
+        u.searchParams.set('selected_currency', cleanCurrency);
+        u.searchParams.set('order', getSortParam(cleanSort));
+        u.searchParams.set('lang', 'en-us');
+        u.searchParams.set('offset', String(offset));
+        return u.toString();
+    }
+
+    function appendStayParamsIfMissing(rawUrl) {
+        try {
+            const u = new URL(rawUrl);
+            if (!u.searchParams.has('checkin')) u.searchParams.set('checkin', checkin);
+            if (!u.searchParams.has('checkout')) u.searchParams.set('checkout', checkout);
+            if (!u.searchParams.has('selected_currency')) u.searchParams.set('selected_currency', cleanCurrency);
+            if (!u.searchParams.has('lang')) u.searchParams.set('lang', 'en-us');
+            return u.toString();
+        } catch {
+            return rawUrl;
+        }
+    }
+
+    const stats = {
+        totalHotels: 0,
+        totalPriceNumeric: 0,
+        validPriceCount: 0,
+        destinations: new Set(),
+        failed: 0,
+    };
+
+    const searchParams = {
+        destination: cleanDestination,
+        checkin,
+        checkout,
+        nights,
+        currency: cleanCurrency,
+        minRating: safeMinRating,
+        minStars: safeMinStars,
+    };
+
+    const seenHotelKeys = new Set();
+
+    async function scrapeSearchUrlPaginated(urlBuilder, label) {
+        let offset = 0;
+        let hasMore = true;
+        let consecutiveFilteredEmpty = 0;
+        const pageSize = 25;
+
+        while (stats.totalHotels < safeMaxHotels && hasMore && offset < 1000) {
+            const targetUrl = urlBuilder(offset);
+            log.info(`📜 Fetching page offset ${offset} (${stats.totalHotels}/${safeMaxHotels} hotels scraped)...`);
+
+            try {
+                const { html, emptySearch, diagnostics } = await fetchWithFallback(targetUrl, `${label} offset=${offset}`);
+
+                if (emptySearch) {
+                    log.info(`ℹ️ Booking.com reported 0 matching properties for "${label}" at offset ${offset}.`);
                     hasMore = false;
                     break;
                 }
 
-                await Actor.pushData(h);
-                stats.totalHotels++;
-                stats.destinations.add(destination);
+                const rawCards = countPropertyCards(html);
+                const hotels = parseSearchResultsHtml(html, cleanDestination || label, searchParams);
 
-                if (h.priceNumeric > 0) {
-                    stats.totalPriceNumeric += h.priceNumeric;
-                    stats.validPriceCount++;
+                if (rawCards === 0) {
+                    log.warning(`ℹ️ No property cards found at offset ${offset}.${formatDiagnostics(diagnostics)}`);
+                    hasMore = false;
+                    break;
                 }
 
-                log.info(`✅ [${stats.totalHotels}/${maxHotels}] Scraped: "${h.name}" - ${h.price} (Rating: ${h.rating || 'N/A'})`);
-            }
+                let addedOnPage = 0;
+                for (const h of hotels) {
+                    if (stats.totalHotels >= safeMaxHotels) {
+                        hasMore = false;
+                        break;
+                    }
+                    const key = h.url || h.id;
+                    if (key && seenHotelKeys.has(key)) continue;
+                    if (key) seenHotelKeys.add(key);
 
-            offset += pageSize;
-            if (hotels.length < pageSize) {
-                hasMore = false;
-            }
+                    await Actor.pushData(h);
+                    stats.totalHotels++;
+                    addedOnPage++;
+                    if (h.destination) stats.destinations.add(h.destination);
 
-        } catch (err) {
-            log.error(`❌ Error scraping search page offset ${offset}: ${err.message}`);
-            stats.failed++;
-            break;
+                    if (h.priceNumeric > 0) {
+                        stats.totalPriceNumeric += h.priceNumeric;
+                        stats.validPriceCount++;
+                    }
+
+                    log.info(`✅ [${stats.totalHotels}/${safeMaxHotels}] Scraped: "${h.name}" - ${h.price} (Rating: ${h.rating ?? 'N/A'}, Stars: ${h.stars ?? 'N/A'})`);
+                }
+
+                if (hotels.length > 0 && addedOnPage === 0) {
+                    log.info(`ℹ️ Reached end of unique results at offset ${offset}. Finishing search.`);
+                    hasMore = false;
+                    break;
+                }
+
+                if (hotels.length === 0 && rawCards > 0) {
+                    consecutiveFilteredEmpty++;
+                    log.info(`ℹ️ ${rawCards} cards at offset ${offset} matched 0 hotels after minRating/minStars filters (${consecutiveFilteredEmpty}/3).`);
+                    if (consecutiveFilteredEmpty >= 3) {
+                        hasMore = false;
+                        break;
+                    }
+                } else {
+                    consecutiveFilteredEmpty = 0;
+                }
+
+                offset += pageSize;
+                if (rawCards < 15) {
+                    hasMore = false;
+                } else {
+                    await new Promise((r) => setTimeout(r, 1000));
+                }
+            } catch (err) {
+                log.error(`❌ Error scraping search page offset ${offset}: ${err.message}`);
+                stats.failed++;
+                break;
+            }
         }
     }
+
+    // CASE 1: DIRECT HOTEL OR SEARCH URLS PROVIDED
+    if (safeHotelUrls.length > 0) {
+        log.info(`🎯 Processing ${safeHotelUrls.length} direct Booking.com URLs...`);
+
+        for (const rawUrl of safeHotelUrls) {
+            if (stats.totalHotels >= safeMaxHotels) break;
+
+            if (/\/searchresults/i.test(rawUrl)) {
+                log.info(`🔎 Detected Booking search URL in hotelUrls: ${rawUrl}`);
+                await scrapeSearchUrlPaginated((offset) => {
+                    try {
+                        const u = new URL(appendStayParamsIfMissing(rawUrl));
+                        u.searchParams.set('offset', String(offset));
+                        return u.toString();
+                    } catch {
+                        return rawUrl;
+                    }
+                }, rawUrl);
+                continue;
+            }
+
+            try {
+                const targetUrl = appendStayParamsIfMissing(rawUrl);
+                log.info(`🏨 Scraping hotel page: ${targetUrl}`);
+                const { html, diagnostics } = await fetchWithFallback(targetUrl, targetUrl);
+
+                const hotel = parseHotelDetailPage(html, rawUrl, searchParams);
+                if (hotel && hotel.name) {
+                    await Actor.pushData(hotel);
+                    stats.totalHotels++;
+                    if (hotel.city || cleanDestination) stats.destinations.add(hotel.city || cleanDestination);
+                    if (hotel.priceNumeric > 0) {
+                        stats.totalPriceNumeric += hotel.priceNumeric;
+                        stats.validPriceCount++;
+                    }
+                    log.info(`✅ Successfully scraped Hotel: "${hotel.name}" [Rating: ${hotel.rating ?? 'N/A'}, Stars: ${hotel.stars ?? 'N/A'}]`);
+                } else {
+                    log.warning(`⚠️ Could not parse hotel details from ${rawUrl}${formatDiagnostics(diagnostics)}`);
+                }
+            } catch (err) {
+                log.error(`❌ Failed scraping hotel ${rawUrl}: ${err.message}`);
+                stats.failed++;
+            }
+        }
+    }
+
+    // CASE 2: SEARCH BY DESTINATION (CITY / REGION)
+    else if (cleanDestination) {
+        log.info(`🔍 Searching Booking.com for destination: "${cleanDestination}"...`);
+        await scrapeSearchUrlPaginated((offset) => buildSearchUrl(cleanDestination, offset), cleanDestination);
+    }
+
+    const averagePrice = stats.validPriceCount > 0 ? Math.round(stats.totalPriceNumeric / stats.validPriceCount) : 0;
+    const isBlockedRun = stats.failed > 0 && stats.totalHotels === 0;
+
+    const summary = {
+        status: isBlockedRun ? 'BLOCKED_BY_WAF' : 'COMPLETED',
+        timestamp: new Date().toISOString(),
+        metrics: {
+            totalHotelsScraped: stats.totalHotels,
+            destinationSearched: cleanDestination || null,
+            destinationsCovered: Array.from(stats.destinations),
+            currency: cleanCurrency,
+            checkinDate: checkin,
+            checkoutDate: checkout,
+            stayNights: nights,
+            averageTotalPrice: averagePrice > 0 ? `${cleanCurrency} ${averagePrice}` : 'N/A',
+            averagePricePerNight: averagePrice > 0 ? `${cleanCurrency} ${Math.round(averagePrice / nights)}` : 'N/A',
+            failedRequests: stats.failed,
+        },
+        message: isBlockedRun
+            ? 'Requests were blocked/challenged by Booking.com anti-bot (AWS WAF). Enable Apify Proxy group "RESIDENTIAL" or "UNBLOCKER" in proxyConfiguration.'
+            : 'Booking.com Ultimate Scraper completed successfully.',
+    };
+
+    await Actor.setValue('OUTPUT', summary);
+    log.info('🏁 Execution Finished. Executive Summary:', summary);
+} catch (err) {
+    hasFailed = true;
+    log.error(`Fatal execution error: ${err.message}`, { stack: err.stack });
+    await Actor.setValue('OUTPUT', { status: 'FAILED', error: err.message }).catch(() => {});
+    await Actor.fail(err.message);
+} finally {
+    await pwSession?.close().catch(() => {});
+    if (!hasFailed) {
+        await Actor.exit();
+    }
 }
-
-// Generate execution overview summary
-const averagePrice = stats.validPriceCount > 0 ? Math.round(stats.totalPriceNumeric / stats.validPriceCount) : 0;
-const summary = {
-    status: 'COMPLETED',
-    timestamp: new Date().toISOString(),
-    metrics: {
-        totalHotelsScraped: stats.totalHotels,
-        destinationSearched: destination,
-        destinationsCovered: Array.from(stats.destinations),
-        currency,
-        checkinDate: checkin,
-        checkoutDate: checkout,
-        stayNights: nights,
-        averageTotalPrice: averagePrice > 0 ? `${currency} ${averagePrice}` : 'N/A',
-        averagePricePerNight: averagePrice > 0 ? `${currency} ${Math.round(averagePrice / nights)}` : 'N/A',
-        failedRequests: stats.failed
-    },
-    message: 'Booking.com Ultimate Scraper completed successfully.'
-};
-
-await Actor.setValue('OUTPUT', summary);
-log.info('🏁 Execution Finished. Executive Summary:', summary);
-
-await Actor.exit();
