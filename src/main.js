@@ -211,7 +211,8 @@ try {
             });
         }
 
-        async fetchPage(url) {
+        async fetchPage(url, options = {}) {
+            const { targetCards = 25 } = options;
             await this.ensureReady();
             const page = await this.context.newPage();
             let lastDocStatus = 200;
@@ -227,7 +228,7 @@ try {
             });
 
             try {
-                const navResponse = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+                const navResponse = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
                 const targetSelector = '[data-testid="property-card"], [data-testid="property-card-container"], #hotellist_inner .sr_property_block, h2.pp-header__title, #hp_hotel_name, [data-testid="PropertyHeaderTitle"], #px-captcha, #challenge-container';
 
@@ -258,6 +259,56 @@ try {
                 await page.evaluate(() => window.scrollBy(0, 600)).catch(() => {});
                 await page.waitForTimeout(800);
 
+                const cardSel = '[data-testid="property-card"]';
+                let currentCards = await page.locator(cardSel).count().catch(() => 0);
+                let loadMoreExhausted = false;
+
+                if (currentCards > 0 && targetCards > currentCards) {
+                    const maxClicks = 12;
+                    let noGrowthClicks = 0;
+
+                    for (let clickIdx = 0; clickIdx < maxClicks && currentCards < targetCards; clickIdx++) {
+                        await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight)).catch(() => {});
+                        await page.waitForTimeout(400);
+
+                        const loadMoreBtn = page.locator(
+                            'button:has-text("Load more results"), button:has-text("Load more"), [data-testid="pagination-load-more"] button'
+                        ).first();
+
+                        const isVisible = await loadMoreBtn.isVisible({ timeout: 2000 }).catch(() => false);
+                        if (!isVisible) {
+                            loadMoreExhausted = true;
+                            break;
+                        }
+
+                        const prevCount = currentCards;
+                        try {
+                            await loadMoreBtn.scrollIntoViewIfNeeded({ timeout: 2000 }).catch(() => {});
+                            await loadMoreBtn.click({ timeout: 4000 });
+                            await page.waitForFunction(
+                                ({ sel, prev }) => document.querySelectorAll(sel).length > prev,
+                                { sel: cardSel, prev: prevCount },
+                                { timeout: 6000 },
+                            ).catch(() => {});
+                            await page.waitForTimeout(400);
+                        } catch {
+                            loadMoreExhausted = true;
+                            break;
+                        }
+
+                        currentCards = await page.locator(cardSel).count().catch(() => prevCount);
+                        if (currentCards <= prevCount) {
+                            noGrowthClicks++;
+                            if (noGrowthClicks >= 2) {
+                                loadMoreExhausted = true;
+                                break;
+                            }
+                        } else {
+                            noGrowthClicks = 0;
+                        }
+                    }
+                }
+
                 const html = await safePageContent(page);
                 const finalUrl = page.url();
                 const status = lastDocStatus || (navResponse ? navResponse.status() : 200);
@@ -280,6 +331,7 @@ try {
                     html,
                     emptySearch: Boolean(blockCheck.emptySearch),
                     diagnostics: blockCheck.diagnostics,
+                    loadMoreExhausted,
                 };
             } finally {
                 await page.close().catch(() => {});
@@ -296,10 +348,11 @@ try {
 
     pwSession = new PlaywrightSession();
 
-    async function fetchWithFallback(url, label) {
+    async function fetchWithFallback(url, label, fetchOptions = {}) {
         if (!preferPlaywright) {
             try {
-                return await fetchHtml(url);
+                const httpRes = await fetchHtml(url);
+                return { ...httpRes, usedPlaywright: false, loadMoreExhausted: false };
             } catch (httpErr) {
                 log.warning(`⚠️ Fast HTTP blocked/challenged for ${label} (${httpErr.message}). Trying Playwright browser fallback...`);
                 preferPlaywright = true;
@@ -311,7 +364,8 @@ try {
 
         for (let pwAttempt = 1; pwAttempt <= maxPwAttempts; pwAttempt++) {
             try {
-                return await pwSession.fetchPage(url);
+                const pwRes = await pwSession.fetchPage(url, fetchOptions);
+                return { ...pwRes, usedPlaywright: true };
             } catch (pwErr) {
                 lastPwErr = pwErr;
                 await pwSession.close();
@@ -334,6 +388,21 @@ try {
         }
     }
 
+    function buildNfltParam() {
+        const parts = [];
+        if (safeMinStars >= 1) {
+            const minStarInt = Math.min(5, Math.max(1, Math.ceil(safeMinStars)));
+            for (let s = minStarInt; s <= 5; s++) {
+                parts.push(`class=${s}`);
+            }
+        }
+        if (safeMinRating >= 9) parts.push('review_score=90');
+        else if (safeMinRating >= 8) parts.push('review_score=80');
+        else if (safeMinRating >= 7) parts.push('review_score=70');
+        else if (safeMinRating >= 6) parts.push('review_score=60');
+        return parts.join(';');
+    }
+
     function buildSearchUrl(destQuery, offset = 0) {
         const u = new URL('https://www.booking.com/searchresults.html');
         u.searchParams.set('ss', destQuery);
@@ -348,6 +417,10 @@ try {
         u.searchParams.set('selected_currency', cleanCurrency);
         u.searchParams.set('order', getSortParam(cleanSort));
         u.searchParams.set('lang', 'en-us');
+        const nflt = buildNfltParam();
+        if (nflt) {
+            u.searchParams.set('nflt', nflt);
+        }
         u.searchParams.set('offset', String(offset));
         return u.toString();
     }
@@ -385,32 +458,64 @@ try {
 
     const seenHotelKeys = new Set();
 
-    async function scrapeSearchUrlPaginated(urlBuilder, label) {
+    async function scrapeSearchUrlPaginated(urlBuilder, label, serverFilteredStars = false) {
+        const seenRawUrls = new Set();
         let offset = 0;
         let hasMore = true;
         let consecutiveFilteredEmpty = 0;
+        let forceLoadMoreFromZero = false;
+        let loadMoreTarget = Math.min(250, safeMaxHotels);
         const pageSize = 25;
 
         while (stats.totalHotels < safeMaxHotels && hasMore && offset < 1000) {
-            const targetUrl = urlBuilder(offset);
-            log.info(`📜 Fetching page offset ${offset} (${stats.totalHotels}/${safeMaxHotels} hotels scraped)...`);
+            const effectiveOffset = forceLoadMoreFromZero ? 0 : offset;
+            const targetUrl = urlBuilder(effectiveOffset);
+            const desiredCards = forceLoadMoreFromZero ? loadMoreTarget : Math.min(250, safeMaxHotels);
+
+            log.info(
+                forceLoadMoreFromZero
+                    ? `📜 Expanding results in browser (target ~${desiredCards} cards, ${stats.totalHotels}/${safeMaxHotels} hotels scraped)...`
+                    : `📜 Fetching page offset ${effectiveOffset} (${stats.totalHotels}/${safeMaxHotels} hotels scraped)...`,
+            );
 
             try {
-                const { html, emptySearch, diagnostics } = await fetchWithFallback(targetUrl, `${label} offset=${offset}`);
+                const {
+                    html,
+                    emptySearch,
+                    diagnostics,
+                    usedPlaywright,
+                    loadMoreExhausted,
+                } = await fetchWithFallback(targetUrl, `${label} offset=${effectiveOffset}`, { targetCards: desiredCards });
 
                 if (emptySearch) {
-                    log.info(`ℹ️ Booking.com reported 0 matching properties for "${label}" at offset ${offset}.`);
+                    log.info(`ℹ️ Booking.com reported 0 matching properties for "${label}" at offset ${effectiveOffset}.`);
                     hasMore = false;
                     break;
                 }
 
-                const { hotels, stats: parseStats } = parseSearchResultsDetailed(html, cleanDestination || label, searchParams);
+                const { hotels, stats: parseStats } = parseSearchResultsDetailed(
+                    html,
+                    cleanDestination || label,
+                    { ...searchParams, serverFilteredStars },
+                );
                 const rawCards = parseStats.rawCards;
 
                 if (rawCards === 0) {
-                    log.warning(`ℹ️ No property cards found at offset ${offset}.${formatDiagnostics(diagnostics)}`);
+                    log.warning(`ℹ️ No property cards found at offset ${effectiveOffset}.${formatDiagnostics(diagnostics)}`);
                     hasMore = false;
                     break;
+                }
+
+                if (parseStats.usedStarFallback) {
+                    log.warning('ℹ️ Property cards did not expose star badges in DOM; keeping results matching Booking server-side class filter.');
+                }
+
+                let unseenRawCount = 0;
+                for (const rawCardUrl of parseStats.allUrls || []) {
+                    if (!seenRawUrls.has(rawCardUrl)) {
+                        seenRawUrls.add(rawCardUrl);
+                        unseenRawCount++;
+                    }
                 }
 
                 let addedOnPage = 0;
@@ -436,21 +541,57 @@ try {
                     log.info(`✅ [${stats.totalHotels}/${safeMaxHotels}] Scraped: "${h.name}" - ${h.price} (Rating: ${h.rating ?? 'N/A'}, Stars: ${h.stars ?? 'N/A'})`);
                 }
 
-                if (hotels.length > 0 && addedOnPage === 0) {
-                    log.info(`ℹ️ Reached end of unique results at offset ${offset}. Finishing search.`);
+                if (stats.totalHotels >= safeMaxHotels) {
                     hasMore = false;
                     break;
                 }
 
-                if (hotels.length === 0 && rawCards > 0) {
+                // Stop immediately or expand via Load More if no unseen property cards arrived
+                if ((parseStats.allUrls?.length || 0) > 0 && unseenRawCount === 0) {
+                    if (!forceLoadMoreFromZero && !loadMoreExhausted && seenRawUrls.size < 250) {
+                        forceLoadMoreFromZero = true;
+                        preferPlaywright = true;
+                        loadMoreTarget = Math.min(250, seenRawUrls.size + Math.max(25, (safeMaxHotels - stats.totalHotels) * 2));
+                        log.info(`ℹ️ Offset ${effectiveOffset} repeated existing cards; switching to in-page "Load more results" pagination (target ${loadMoreTarget})...`);
+                        await new Promise((r) => setTimeout(r, 800));
+                        continue;
+                    }
+                    log.info(`ℹ️ Reached end of unique results at offset ${effectiveOffset} (0 new properties). Finishing search.`);
+                    hasMore = false;
+                    break;
+                }
+
+                if (addedOnPage === 0 && rawCards > 0) {
                     consecutiveFilteredEmpty++;
-                    log.warning(`ℹ️ ${rawCards} cards at offset ${offset} extracted 0 hotels (${consecutiveFilteredEmpty}/3).`, parseStats);
+                    log.warning(`ℹ️ ${rawCards} cards at offset ${effectiveOffset} yielded 0 new matching hotels (${consecutiveFilteredEmpty}/3).`, parseStats);
                     if (consecutiveFilteredEmpty >= 3) {
                         hasMore = false;
                         break;
                     }
                 } else {
                     consecutiveFilteredEmpty = 0;
+                }
+
+                if (usedPlaywright && !forceLoadMoreFromZero && rawCards >= 15) {
+                    // Booking desktop React ignores ?offset=25 on reload; expand via in-page "Load more results"
+                    if (loadMoreExhausted || seenRawUrls.size >= 250) {
+                        hasMore = false;
+                        break;
+                    }
+                    forceLoadMoreFromZero = true;
+                    loadMoreTarget = Math.min(250, seenRawUrls.size + Math.max(25, (safeMaxHotels - stats.totalHotels) * 2));
+                    await new Promise((r) => setTimeout(r, 800));
+                    continue;
+                }
+
+                if (forceLoadMoreFromZero) {
+                    if (loadMoreExhausted || loadMoreTarget >= 250) {
+                        hasMore = false;
+                        break;
+                    }
+                    loadMoreTarget = Math.min(250, Math.max(loadMoreTarget + 50, seenRawUrls.size + 40));
+                    await new Promise((r) => setTimeout(r, 800));
+                    continue;
                 }
 
                 offset += pageSize;
@@ -460,7 +601,7 @@ try {
                     await new Promise((r) => setTimeout(r, 1000));
                 }
             } catch (err) {
-                log.error(`❌ Error scraping search page offset ${offset}: ${err.message}`);
+                log.error(`❌ Error scraping search page offset ${effectiveOffset}: ${err.message}`);
                 stats.failed++;
                 break;
             }
@@ -476,15 +617,29 @@ try {
 
             if (/\/searchresults/i.test(rawUrl)) {
                 log.info(`🔎 Detected Booking search URL in hotelUrls: ${rawUrl}`);
+                let hasServerClassFilter = false;
+                try {
+                    const checkUrl = new URL(appendStayParamsIfMissing(rawUrl));
+                    const defaultNflt = buildNfltParam();
+                    if (!checkUrl.searchParams.has('nflt') && defaultNflt) {
+                        checkUrl.searchParams.set('nflt', defaultNflt);
+                    }
+                    hasServerClassFilter = /(?:^|;)class=\d/i.test(checkUrl.searchParams.get('nflt') || '');
+                } catch {}
+
                 await scrapeSearchUrlPaginated((offset) => {
                     try {
                         const u = new URL(appendStayParamsIfMissing(rawUrl));
+                        const defaultNflt = buildNfltParam();
+                        if (!u.searchParams.has('nflt') && defaultNflt) {
+                            u.searchParams.set('nflt', defaultNflt);
+                        }
                         u.searchParams.set('offset', String(offset));
                         return u.toString();
                     } catch {
                         return rawUrl;
                     }
-                }, rawUrl);
+                }, rawUrl, hasServerClassFilter);
                 continue;
             }
 
@@ -515,8 +670,13 @@ try {
 
     // CASE 2: SEARCH BY DESTINATION (CITY / REGION)
     else if (cleanDestination) {
-        log.info(`🔍 Searching Booking.com for destination: "${cleanDestination}"...`);
-        await scrapeSearchUrlPaginated((offset) => buildSearchUrl(cleanDestination, offset), cleanDestination);
+        const nfltFilter = buildNfltParam();
+        log.info(`🔍 Searching Booking.com for destination: "${cleanDestination}"...`, nfltFilter ? { nflt: nfltFilter } : {});
+        await scrapeSearchUrlPaginated(
+            (offset) => buildSearchUrl(cleanDestination, offset),
+            cleanDestination,
+            safeMinStars >= 1,
+        );
     }
 
     const averagePrice = stats.validPriceCount > 0 ? Math.round(stats.totalPriceNumeric / stats.validPriceCount) : 0;
