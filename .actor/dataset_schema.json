@@ -24,83 +24,83 @@
                 "title": "Destination Searched"
             },
             "price": {
-                "type": "string",
+                "type": ["string", "null"],
                 "title": "Total Price (Formatted)"
             },
             "priceNumeric": {
-                "type": "number",
+                "type": ["number", "null"],
                 "title": "Total Price (Numeric)"
             },
             "currency": {
-                "type": "string",
+                "type": ["string", "null"],
                 "title": "Currency Code"
             },
             "pricePerNight": {
-                "type": "number",
+                "type": ["number", "null"],
                 "title": "Price Per Night"
             },
             "nights": {
-                "type": "integer",
+                "type": ["integer", "null"],
                 "title": "Number of Nights"
             },
             "checkin": {
-                "type": "string",
+                "type": ["string", "null"],
                 "title": "Check-in Date (YYYY-MM-DD)"
             },
             "checkout": {
-                "type": "string",
+                "type": ["string", "null"],
                 "title": "Check-out Date (YYYY-MM-DD)"
             },
             "rating": {
-                "type": "number",
+                "type": ["number", "null"],
                 "title": "Overall Review Score (0 - 10)"
             },
             "ratingText": {
-                "type": "string",
+                "type": ["string", "null"],
                 "title": "Review Description (e.g. Superb, Fabulous)"
             },
             "reviewsCount": {
-                "type": "integer",
+                "type": ["integer", "null"],
                 "title": "Total Reviews Count"
             },
             "reviewSubscores": {
-                "type": "object",
+                "type": ["object", "null"],
                 "title": "Review Category Subscores"
             },
             "stars": {
-                "type": "integer",
+                "type": ["integer", "null"],
                 "title": "Star Rating (1 - 5)"
             },
             "propertyType": {
-                "type": "string",
+                "type": ["string", "null"],
                 "title": "Property Type"
             },
             "address": {
-                "type": "string",
+                "type": ["string", "null"],
                 "title": "Full Address"
             },
             "city": {
-                "type": "string",
+                "type": ["string", "null"],
                 "title": "City"
             },
             "country": {
-                "type": "string",
+                "type": ["string", "null"],
                 "title": "Country"
             },
             "distanceFromCenter": {
-                "type": "string",
+                "type": ["string", "null"],
                 "title": "Distance from City Center"
             },
             "latitude": {
-                "type": "number",
+                "type": ["number", "null"],
                 "title": "Latitude Coordinate"
             },
             "longitude": {
-                "type": "number",
+                "type": ["number", "null"],
                 "title": "Longitude Coordinate"
             },
             "roomType": {
-                "type": "string",
+                "type": ["string", "null"],
                 "title": "Room / Unit Type"
             },
             "hasFreeCancellation": {
@@ -116,19 +116,19 @@
                 "title": "No Prepayment Needed"
             },
             "facilities": {
-                "type": "array",
+                "type": ["array", "null"],
                 "title": "Popular Facilities / Amenities"
             },
             "description": {
-                "type": "string",
+                "type": ["string", "null"],
                 "title": "Property Description"
             },
             "imageUrl": {
-                "type": "string",
+                "type": ["string", "null"],
                 "title": "Cover Image URL"
             },
             "imageUrls": {
-                "type": "array",
+                "type": ["array", "null"],
                 "title": "HD Image Gallery URLs"
             },
             "scrapedAt": {
