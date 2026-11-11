@@ -7,8 +7,7 @@ import {
     resolveStayDates,
     parsePlaywrightProxy,
     detectBookingBlock,
-    countPropertyCards,
-    parseSearchResultsHtml,
+    parseSearchResultsDetailed,
     parseHotelDetailPage,
 } from './extractors.js';
 
@@ -66,6 +65,9 @@ try {
         children: safeChildren,
         rooms: safeRooms,
         currency: cleanCurrency,
+        minRating: safeMinRating,
+        minStars: safeMinStars,
+        sortBy: cleanSort,
         maxHotels: safeMaxHotels,
     });
 
@@ -150,13 +152,10 @@ try {
         constructor() {
             this.browser = null;
             this.context = null;
-            this.page = null;
-            this.lastDocStatus = 200;
-            this.lastDocHeaders = {};
         }
 
         async ensureReady() {
-            if (this.page && !this.page.isClosed()) return;
+            if (this.browser?.isConnected() && this.context) return;
 
             const attemptProxyUrl = proxyConfig ? await proxyConfig.newUrl() : undefined;
             const hasXvfbDisplay = process.platform === 'linux' && Boolean(process.env.DISPLAY);
@@ -202,94 +201,96 @@ try {
                 Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
             });
 
-            this.page = await this.context.newPage();
-
-            // Abort only heavy binary media/fonts so Booking UI & WAF JS execute naturally
-            await this.page.route('**/*', (route) => {
+            // Abort heavy binary images/media/fonts at context level to prevent tab OOM crashes while keeping cookies warm
+            await this.context.route('**/*', (route) => {
                 const type = route.request().resourceType();
-                if (['media', 'font'].includes(type)) {
-                    return route.abort();
+                if (['image', 'media', 'font'].includes(type)) {
+                    return route.abort().catch(() => {});
                 }
-                return route.continue();
-            });
-
-            this.page.on('response', (res) => {
-                try {
-                    if (res.request().resourceType() === 'document' && /booking\.com/i.test(res.url())) {
-                        this.lastDocStatus = res.status();
-                        this.lastDocHeaders = res.headers();
-                    }
-                } catch {}
+                return route.continue().catch(() => {});
             });
         }
 
         async fetchPage(url) {
             await this.ensureReady();
-            const page = this.page;
-            this.lastDocStatus = 200;
-            this.lastDocHeaders = {};
+            const page = await this.context.newPage();
+            let lastDocStatus = 200;
+            let lastDocHeaders = {};
 
-            const navResponse = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
-
-            const targetSelector = '[data-testid="property-card"], [data-testid="property-card-container"], #hotellist_inner .sr_property_block, h2.pp-header__title, #hp_hotel_name, [data-testid="PropertyHeaderTitle"], #px-captcha, #challenge-container';
-
-            try {
-                await page.waitForSelector(targetSelector, { timeout: 15000 });
-            } catch {
-                // Handle client-side reload if AWS WAF JS refreshed the document
-                await page.waitForLoadState('domcontentloaded', { timeout: 10000 }).catch(() => {});
-                await page.waitForSelector(targetSelector, { timeout: 10000 }).catch(() => {});
-            }
-
-            // Dismiss OneTrust cookie banner or Booking Genius sign-in modal if present
-            const dismissSelectors = [
-                '#onetrust-accept-btn-handler',
-                'button[aria-label="Dismiss sign-in info."]',
-                'button[aria-label="Dismiss sign in information."]',
-            ];
-            for (const sel of dismissSelectors) {
+            page.on('response', (res) => {
                 try {
-                    const btn = page.locator(sel).first();
-                    if (await btn.isVisible({ timeout: 1200 })) {
-                        await btn.click();
-                        await page.waitForTimeout(400);
+                    if (res.request().resourceType() === 'document' && /booking\.com/i.test(res.url())) {
+                        lastDocStatus = res.status();
+                        lastDocHeaders = res.headers();
                     }
                 } catch {}
+            });
+
+            try {
+                const navResponse = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+
+                const targetSelector = '[data-testid="property-card"], [data-testid="property-card-container"], #hotellist_inner .sr_property_block, h2.pp-header__title, #hp_hotel_name, [data-testid="PropertyHeaderTitle"], #px-captcha, #challenge-container';
+
+                try {
+                    await page.waitForSelector(targetSelector, { timeout: 15000 });
+                } catch {
+                    // Handle client-side reload if AWS WAF JS refreshed the document
+                    await page.waitForLoadState('domcontentloaded', { timeout: 10000 }).catch(() => {});
+                    await page.waitForSelector(targetSelector, { timeout: 10000 }).catch(() => {});
+                }
+
+                // Dismiss OneTrust cookie banner or Booking Genius sign-in modal if present
+                const dismissSelectors = [
+                    '#onetrust-accept-btn-handler',
+                    'button[aria-label="Dismiss sign-in info."]',
+                    'button[aria-label="Dismiss sign in information."]',
+                ];
+                for (const sel of dismissSelectors) {
+                    try {
+                        const btn = page.locator(sel).first();
+                        if (await btn.isVisible({ timeout: 1000 })) {
+                            await btn.click({ timeout: 1500 });
+                            await page.waitForTimeout(300);
+                        }
+                    } catch {}
+                }
+
+                await page.evaluate(() => window.scrollBy(0, 600)).catch(() => {});
+                await page.waitForTimeout(800);
+
+                const html = await safePageContent(page);
+                const finalUrl = page.url();
+                const status = lastDocStatus || (navResponse ? navResponse.status() : 200);
+                const headers = Object.keys(lastDocHeaders).length > 0
+                    ? lastDocHeaders
+                    : (navResponse ? navResponse.headers() : {});
+
+                const blockCheck = detectBookingBlock(html, finalUrl, status, headers);
+                if (blockCheck.blocked) {
+                    const diagSuffix = formatDiagnostics(blockCheck.diagnostics);
+                    const err = new Error(
+                        `${blockCheck.message}${diagSuffix}. Try Apify Proxy group "RESIDENTIAL" or "UNBLOCKER".`
+                    );
+                    err.reason = blockCheck.reason;
+                    err.diagnostics = blockCheck.diagnostics;
+                    throw err;
+                }
+
+                return {
+                    html,
+                    emptySearch: Boolean(blockCheck.emptySearch),
+                    diagnostics: blockCheck.diagnostics,
+                };
+            } finally {
+                await page.close().catch(() => {});
             }
-
-            await page.evaluate(() => window.scrollBy(0, 600)).catch(() => {});
-            await page.waitForTimeout(900);
-
-            const html = await safePageContent(page);
-            const finalUrl = page.url();
-            const status = this.lastDocStatus || (navResponse ? navResponse.status() : 200);
-            const headers = Object.keys(this.lastDocHeaders).length > 0
-                ? this.lastDocHeaders
-                : (navResponse ? navResponse.headers() : {});
-
-            const blockCheck = detectBookingBlock(html, finalUrl, status, headers);
-            if (blockCheck.blocked) {
-                const diagSuffix = formatDiagnostics(blockCheck.diagnostics);
-                const err = new Error(
-                    `${blockCheck.message}${diagSuffix}. Try Apify Proxy group "RESIDENTIAL" or "UNBLOCKER".`
-                );
-                err.reason = blockCheck.reason;
-                err.diagnostics = blockCheck.diagnostics;
-                throw err;
-            }
-
-            return {
-                html,
-                emptySearch: Boolean(blockCheck.emptySearch),
-                diagnostics: blockCheck.diagnostics,
-            };
         }
 
         async close() {
+            await this.context?.close().catch(() => {});
             await this.browser?.close().catch(() => {});
-            this.browser = null;
             this.context = null;
-            this.page = null;
+            this.browser = null;
         }
     }
 
@@ -403,8 +404,8 @@ try {
                     break;
                 }
 
-                const rawCards = countPropertyCards(html);
-                const hotels = parseSearchResultsHtml(html, cleanDestination || label, searchParams);
+                const { hotels, stats: parseStats } = parseSearchResultsDetailed(html, cleanDestination || label, searchParams);
+                const rawCards = parseStats.rawCards;
 
                 if (rawCards === 0) {
                     log.warning(`ℹ️ No property cards found at offset ${offset}.${formatDiagnostics(diagnostics)}`);
@@ -443,7 +444,7 @@ try {
 
                 if (hotels.length === 0 && rawCards > 0) {
                     consecutiveFilteredEmpty++;
-                    log.info(`ℹ️ ${rawCards} cards at offset ${offset} matched 0 hotels after minRating/minStars filters (${consecutiveFilteredEmpty}/3).`);
+                    log.warning(`ℹ️ ${rawCards} cards at offset ${offset} extracted 0 hotels (${consecutiveFilteredEmpty}/3).`, parseStats);
                     if (consecutiveFilteredEmpty >= 3) {
                         hasMore = false;
                         break;
