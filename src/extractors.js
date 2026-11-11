@@ -431,12 +431,14 @@ export function parseSearchResultsDetailed(html, destination, searchParams = {})
         filteredByRating: 0,
         filteredByStars: 0,
         extracted: 0,
+        usedStarFallback: false,
+        allUrls: [],
         sampleCard: null,
     };
     if (!html || typeof html !== 'string') return { hotels: [], stats: emptyStats };
 
     const $ = load(html);
-    const hotels = [];
+    const candidates = [];
     const seenUrls = new Set();
     const $cards = getCardElements($);
 
@@ -491,7 +493,7 @@ export function parseSearchResultsDetailed(html, destination, searchParams = {})
             const testIds = [];
             $card.find('[data-testid]').each((__, el) => {
                 const tid = $(el).attr('data-testid');
-                if (tid && !testIds.includes(tid) && testIds.length < 10) testIds.push(tid);
+                if (tid && !testIds.includes(tid) && testIds.length < 25) testIds.push(tid);
             });
             stats.sampleCard = {
                 name: name || null,
@@ -517,6 +519,7 @@ export function parseSearchResultsDetailed(html, destination, searchParams = {})
             return;
         }
         seenUrls.add(url);
+        stats.allUrls.push(url);
 
         const idMatch = url.match(/\/hotel\/[a-z]{2}\/([a-zA-Z0-9_-]+)/i);
         const hotelId = idMatch ? idMatch[1] : name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -569,17 +572,7 @@ export function parseSearchResultsDetailed(html, destination, searchParams = {})
             || null;
         const imageUrl = getHdImageUrl(rawImgUrl);
 
-        // 8. Quality Filters
-        if (searchParams.minRating > 0 && (!rating || rating < searchParams.minRating)) {
-            stats.filteredByRating++;
-            return;
-        }
-        if (searchParams.minStars > 0 && (!stars || stars < searchParams.minStars)) {
-            stats.filteredByStars++;
-            return;
-        }
-
-        hotels.push({
+        candidates.push({
             type: 'HOTEL',
             id: hotelId,
             name,
@@ -607,6 +600,30 @@ export function parseSearchResultsDetailed(html, destination, searchParams = {})
             scrapedAt: new Date().toISOString(),
         });
     });
+
+    const hasAnyStarsInPage = candidates.some((c) => c.stars !== null);
+    const hotels = [];
+
+    for (const h of candidates) {
+        if (searchParams.minRating > 0 && (!h.rating || h.rating < searchParams.minRating)) {
+            stats.filteredByRating++;
+            continue;
+        }
+        if (searchParams.minStars > 0) {
+            if (h.stars !== null && h.stars < searchParams.minStars) {
+                stats.filteredByStars++;
+                continue;
+            }
+            if (h.stars === null) {
+                if (!searchParams.serverFilteredStars || hasAnyStarsInPage) {
+                    stats.filteredByStars++;
+                    continue;
+                }
+                stats.usedStarFallback = true;
+            }
+        }
+        hotels.push(h);
+    }
 
     stats.extracted = hotels.length;
     return { hotels, stats };
