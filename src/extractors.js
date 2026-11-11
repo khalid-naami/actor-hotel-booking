@@ -174,10 +174,21 @@ function normalizeBookingUrl(rawUrl) {
     }
 }
 
+function getCardElements($) {
+    let $cards = $('[data-testid="property-card"]');
+    if (!$cards.length) {
+        $cards = $('[data-testid="property-card-container"]');
+    }
+    if (!$cards.length) {
+        $cards = $('#hotellist_inner .sr_property_block');
+    }
+    return $cards;
+}
+
 export function countPropertyCards(html = '') {
     if (!html || typeof html !== 'string') return 0;
     const $ = load(html);
-    return $('[data-testid="property-card"], [data-testid="property-card-container"], #hotellist_inner .sr_property_block').length;
+    return getCardElements($).length;
 }
 
 /**
@@ -192,7 +203,7 @@ export function detectBookingBlock(html = '', finalUrl = '', statusCode = 200, h
     const title = htmlStr.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1]?.replace(/\s+/g, ' ').trim() || '';
 
     const $ = load(htmlStr);
-    const cardsCount = $('[data-testid="property-card"], [data-testid="property-card-container"], #hotellist_inner .sr_property_block').length;
+    const cardsCount = getCardElements($).length;
     const hasHotelDetail = $('h2.pp-header__title, #hp_hotel_name, [data-testid="PropertyHeaderTitle"], #hotelTmpl, [data-testid="availability-cta"]').length > 0;
     const hasValidPageContent = cardsCount > 0 || hasHotelDetail;
 
@@ -324,34 +335,47 @@ export function extractJsonLd(html) {
 }
 
 function extractStarsFromElement($, $root) {
+    const starRegex = /(\d)\s*(?:out of 5|of 5|\/\s*5|-?\s*stars?|étoiles?|sterne|estrellas?|stelle)/i;
+
     const $rating = $root.find('[data-testid="rating-stars"], [data-testid="rating-squares"]').first();
-    if (!$rating.length) {
-        const anyStarAria = $root.find('[aria-label*="out of 5"], [aria-label*="-star"]').first().attr('aria-label') || '';
-        const m = anyStarAria.match(/(\d)\s*(?:out of 5|-?\s*stars?)/i);
-        return m ? parseInt(m[1], 10) : null;
+    if ($rating.length) {
+        const ariaLabel = $rating.attr('aria-label')
+            || $rating.parent().attr('aria-label')
+            || $rating.closest('[aria-label]').attr('aria-label')
+            || $rating.find('[aria-label]').first().attr('aria-label')
+            || '';
+        const ariaMatch = ariaLabel.match(starRegex);
+        if (ariaMatch) {
+            const val = parseInt(ariaMatch[1], 10);
+            if (val >= 1 && val <= 5) return val;
+        }
+
+        const svgCount = $rating.find('svg').length;
+        if (svgCount >= 1 && svgCount <= 5) return svgCount;
+
+        const spanCount = $rating.children('span').length;
+        if (spanCount >= 1 && spanCount <= 5) return spanCount;
     }
 
-    const ariaLabel = $rating.attr('aria-label')
-        || $rating.closest('[aria-label]').attr('aria-label')
-        || $rating.find('[aria-label]').first().attr('aria-label')
-        || '';
-    const ariaMatch = ariaLabel.match(/(\d)\s*(?:out of 5|-?\s*stars?)/i);
-    if (ariaMatch) {
-        const val = parseInt(ariaMatch[1], 10);
-        if (val >= 1 && val <= 5) return val;
-    }
+    let foundStars = null;
+    $root.find('[aria-label]').each((_, el) => {
+        const lbl = $(el).attr('aria-label') || '';
+        const m = lbl.match(starRegex);
+        if (m) {
+            const val = parseInt(m[1], 10);
+            if (val >= 1 && val <= 5) {
+                foundStars = val;
+                return false;
+            }
+        }
+        return undefined;
+    });
 
-    const svgCount = $rating.find('svg').length;
-    if (svgCount >= 1 && svgCount <= 5) return svgCount;
-
-    const spanCount = $rating.children('span').length;
-    if (spanCount >= 1 && spanCount <= 5) return spanCount;
-
-    return null;
+    return foundStars;
 }
 
 function extractScoreDetails($, $card) {
-    const $scoreEl = $card.find('[data-testid="review-score"]').first();
+    const $scoreEl = $card.find('[data-testid="review-score"], [data-testid="review-score-link"]').first();
     if (!$scoreEl.length) return { rating: null, ratingText: null, reviewsCount: 0 };
 
     // Collect text from children separated by spaces so nested elements never concatenate digits
@@ -364,12 +388,14 @@ function extractScoreDetails($, $card) {
     const combined = parts.join(' ').replace(/\s+/g, ' ').trim() || $scoreEl.text().replace(/\s+/g, ' ').trim();
 
     let rating = null;
-    const scoreMatches = combined.matchAll(/\b(\d{1,2}(?:[.,]\d)?)\b/g);
-    for (const m of scoreMatches) {
-        const val = parseFloat(m[1].replace(',', '.'));
-        if (val > 0 && val <= 10) {
-            rating = val;
-            break;
+    for (const token of combined.split(/\s+/)) {
+        const cleanedToken = token.replace(/[()]/g, '');
+        if (/^(?:10(?:[.,]0)?|[1-9](?:[.,]\d)?)$/.test(cleanedToken)) {
+            const val = parseFloat(cleanedToken.replace(',', '.'));
+            if (val > 0 && val <= 10) {
+                rating = val;
+                break;
+            }
         }
     }
 
@@ -384,40 +410,56 @@ function extractScoreDetails($, $card) {
     return { rating, ratingText, reviewsCount };
 }
 
-// Parse Search Results Page HTML for Property Cards using Cheerio DOM
-export function parseSearchResultsHtml(html, destination, searchParams = {}) {
-    if (!html || typeof html !== 'string') return [];
+function extractCleanTextWithoutSr($el) {
+    if (!$el || !$el.length) return '';
+    const $copy = $el.clone();
+    $copy.find('.bui-u-sr-only, .sr-only').remove();
+    return $copy
+        .text()
+        .replace(/Opens in new window/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+// Detailed Search Results parser returning both hotels and diagnostic skip stats
+export function parseSearchResultsDetailed(html, destination, searchParams = {}) {
+    const emptyStats = {
+        rawCards: 0,
+        noName: 0,
+        noUrl: 0,
+        duplicateUrl: 0,
+        filteredByRating: 0,
+        filteredByStars: 0,
+        extracted: 0,
+        sampleCard: null,
+    };
+    if (!html || typeof html !== 'string') return { hotels: [], stats: emptyStats };
 
     const $ = load(html);
     const hotels = [];
     const seenUrls = new Set();
+    const $cards = getCardElements($);
 
-    let $cards = $('[data-testid="property-card"], [data-testid="property-card-container"]');
-    if (!$cards.length) {
-        $cards = $('#hotellist_inner .sr_property_block');
-    }
+    const stats = {
+        ...emptyStats,
+        rawCards: $cards.length,
+    };
 
-    $cards.each((_, cardNode) => {
+    $cards.each((idx, cardNode) => {
         const $card = $(cardNode);
 
         // 1. Name & Clean URL
         const $titleEl = $card.find('[data-testid="title"], .sr-hotel__name').first();
-        const name = $titleEl.clone().find('.bui-u-sr-only, .sr-only').remove().end()
-            .text()
-            .replace(/Opens in new window/gi, '')
-            .replace(/\s+/g, ' ')
-            .trim();
-        if (!name) return;
+        let name = extractCleanTextWithoutSr($titleEl);
+        if (!name) {
+            name = extractCleanTextWithoutSr($card.find('a[data-testid="title-link"] h3, h3, a[data-testid="title-link"]').first());
+        }
 
         const rawHref = $card.find('a[data-testid="title-link"]').attr('href')
             || $card.find('a[href*="/hotel/"]').first().attr('href')
+            || $card.find('h3 a[href]').first().attr('href')
             || '';
         const url = normalizeBookingUrl(rawHref);
-        if (!url || seenUrls.has(url)) return;
-        seenUrls.add(url);
-
-        const idMatch = url.match(/\/hotel\/[a-z]{2}\/([a-zA-Z0-9_-]+)/i);
-        const hotelId = idMatch ? idMatch[1] : name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
         // 2. Price
         let rawPrice = $card.find('[data-testid="price-and-discounted-price"]').first().text().replace(/\s+/g, ' ').trim();
@@ -425,7 +467,6 @@ export function parseSearchResultsHtml(html, destination, searchParams = {}) {
             rawPrice = $card.find('[data-testid="price"]').first().text().replace(/\s+/g, ' ').trim();
         }
         if (!rawPrice) {
-            // Fallback: scan availability rate block avoiding nights/adults caption and strikethrough prices
             const $rateBlock = $card.find('[data-testid="availability-rate-information"], [data-testid="availability-rate-wrapper"]').first();
             if ($rateBlock.length) {
                 $rateBlock.find('span, div').each((__, el) => {
@@ -442,12 +483,47 @@ export function parseSearchResultsHtml(html, destination, searchParams = {}) {
             }
         }
 
+        // 3. Rating & Stars (captured before skip checks so diagnostics remain informative)
+        const { rating, ratingText, reviewsCount } = extractScoreDetails($, $card);
+        const stars = extractStarsFromElement($, $card);
+
+        if (idx === 0) {
+            const testIds = [];
+            $card.find('[data-testid]').each((__, el) => {
+                const tid = $(el).attr('data-testid');
+                if (tid && !testIds.includes(tid) && testIds.length < 10) testIds.push(tid);
+            });
+            stats.sampleCard = {
+                name: name || null,
+                rawHref: rawHref ? rawHref.slice(0, 100) : null,
+                url: url || null,
+                rawPrice: rawPrice || null,
+                rating,
+                stars,
+                testIds,
+            };
+        }
+
+        if (!name) {
+            stats.noName++;
+            return;
+        }
+        if (!url) {
+            stats.noUrl++;
+            return;
+        }
+        if (seenUrls.has(url)) {
+            stats.duplicateUrl++;
+            return;
+        }
+        seenUrls.add(url);
+
+        const idMatch = url.match(/\/hotel\/[a-z]{2}\/([a-zA-Z0-9_-]+)/i);
+        const hotelId = idMatch ? idMatch[1] : name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
         const { formatted: price, numeric: priceNumeric } = parsePrice(rawPrice);
         const nights = searchParams.nights || 1;
         const pricePerNight = priceNumeric > 0 ? Math.round(priceNumeric / nights) : 0;
-
-        // 3. Rating & Reviews
-        const { rating, ratingText, reviewsCount } = extractScoreDetails($, $card);
 
         // 4. Address & Distance
         const address = $card.find('[data-testid="address"], .bui-card__subtitle, .sr_card_address_line').first().text().replace(/\s+/g, ' ').trim()
@@ -455,10 +531,7 @@ export function parseSearchResultsHtml(html, destination, searchParams = {}) {
             || null;
         const distanceFromCenter = $card.find('[data-testid="distance"]').first().text().replace(/\s+/g, ' ').trim() || null;
 
-        // 5. Stars
-        const stars = extractStarsFromElement($, $card);
-
-        // 6. Badges (Free Cancellation, Breakfast, No Prepayment)
+        // 5. Badges (Free Cancellation, Breakfast, No Prepayment)
         const cardTextLower = $card.text().replace(/\s+/g, ' ').toLowerCase();
         const hasFreeCancellation = Boolean(
             cardTextLower.includes('free cancellation')
@@ -479,7 +552,7 @@ export function parseSearchResultsHtml(html, destination, searchParams = {}) {
             || cardTextLower.includes('sin pago por adelantado')
         );
 
-        // 7. Room Type
+        // 6. Room Type
         const $units = $card.find('[data-testid="recommended-units"]').first();
         let roomType = null;
         if ($units.length) {
@@ -489,16 +562,22 @@ export function parseSearchResultsHtml(html, destination, searchParams = {}) {
                 || null;
         }
 
-        // 8. Cover Image (HD)
+        // 7. Cover Image (HD)
         const rawImgUrl = $card.find('img[data-testid="image"]').first().attr('src')
             || $card.find('img[src*="bstatic.com"]').first().attr('src')
             || $card.find('img[data-src*="bstatic.com"]').first().attr('data-src')
             || null;
         const imageUrl = getHdImageUrl(rawImgUrl);
 
-        // 9. Quality Filters
-        if (searchParams.minRating > 0 && (!rating || rating < searchParams.minRating)) return;
-        if (searchParams.minStars > 0 && (!stars || stars < searchParams.minStars)) return;
+        // 8. Quality Filters
+        if (searchParams.minRating > 0 && (!rating || rating < searchParams.minRating)) {
+            stats.filteredByRating++;
+            return;
+        }
+        if (searchParams.minStars > 0 && (!stars || stars < searchParams.minStars)) {
+            stats.filteredByStars++;
+            return;
+        }
 
         hotels.push({
             type: 'HOTEL',
@@ -529,7 +608,13 @@ export function parseSearchResultsHtml(html, destination, searchParams = {}) {
         });
     });
 
-    return hotels;
+    stats.extracted = hotels.length;
+    return { hotels, stats };
+}
+
+// Parse Search Results Page HTML for Property Cards using Cheerio DOM
+export function parseSearchResultsHtml(html, destination, searchParams = {}) {
+    return parseSearchResultsDetailed(html, destination, searchParams).hotels;
 }
 
 // Parse Individual Hotel Details Page using Cheerio DOM + JSON-LD
