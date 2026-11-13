@@ -1,25 +1,17 @@
 {
     "actorSpecification": 1,
-    "name": "booking-ultimate-scraper",
-    "title": "Booking.com Ultimate Scraper (Hotels, Live Prices, Reviews & Rooms)",
-    "description": "Comprehensive all-in-one Booking.com scraper. Extracts Hotels & Resorts, Live Room Pricing across currencies, Review Scores & Breakdown, Coordinates, Amenities, Free Cancellation policies, and HD Image Galleries by destination or direct URL.",
+    "name": "hotel-booking-scraper",
+    "title": "Booking.com Ultimate Hotel & Property Scraper",
+    "description": "Scrapes Booking.com hotel listings, live room prices, review scores, subscores, star ratings, coordinates, facilities, and high-res photos.",
     "version": "1.0.0",
     "meta": {
-        "templateId": "js-crawlee-playwright"
+        "templateId": "js-crawlee-playwright-chrome"
     },
-    "dockerfile": "./Dockerfile",
+    "dockerfile": "../Dockerfile",
     "input": "./input_schema.json",
-    "storages": {
-        "dataset": "./dataset_schema.json"
-    },
     "output": "./output_schema.json",
-    "categories": [
-        "TRAVEL",
-        "E-COMMERCE",
-        "MARKETING",
-        "AI"
-    ],
-    "environmentVariables": {
-        "APIFY_DISABLE_BROWSER_SANDBOX": "1"
+    "storages": {
+        "dataset": "./dataset_schema.json",
+        "keyValueStore": "./key_value_store_schema.json"
     }
 }
