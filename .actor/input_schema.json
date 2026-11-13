@@ -16,6 +16,10 @@
             "type": "array",
             "description": "Optional list of specific Booking.com hotel URLs or custom search results URLs to scrape directly.",
             "editor": "stringList",
+            "items": {
+                "type": "string"
+            },
+            "default": [],
             "prefill": []
         },
         "checkin": {
