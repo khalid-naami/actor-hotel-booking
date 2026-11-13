@@ -11,6 +11,27 @@ import {
     parseHotelDetailPage,
 } from './extractors.js';
 
+function sanitizeRecord(obj) {
+    if (Array.isArray(obj)) return obj.map((item) => sanitizeRecord(item));
+    if (!obj || typeof obj !== 'object') return obj;
+    const clean = {};
+    for (const [k, v] of Object.entries(obj)) {
+        if (v !== null && v !== undefined && !(typeof v === 'number' && Number.isNaN(v))) {
+            clean[k] = Array.isArray(v)
+                ? v.map((item) => (item && typeof item === 'object' ? sanitizeRecord(item) : item))
+                : v && typeof v === 'object' && !(v instanceof Date)
+                    ? sanitizeRecord(v)
+                    : v;
+        }
+    }
+    return clean;
+}
+
+function isProxyTransportError(errOrStatus) {
+    const msg = String(errOrStatus?.message || errOrStatus || '');
+    return errOrStatus === 597 || errOrStatus === 407 || /597|UPSTREAM407|407|Proxy responded with|tunneling socket|ERR_PROXY_CONNECTION_FAILED|ERR_TUNNEL_CONNECTION_FAILED/i.test(msg);
+}
+
 await Actor.init();
 
 let hasFailed = false;
@@ -71,7 +92,7 @@ try {
         maxHotels: safeMaxHotels,
     });
 
-    const proxyConfig = proxyConfiguration ? await Actor.createProxyConfiguration(proxyConfiguration) : undefined;
+    let proxyConfig = proxyConfiguration ? await Actor.createProxyConfiguration(proxyConfiguration) : undefined;
     if (proxyConfig) {
         log.info('Configured Apify Proxy successfully', {
             groups: proxyConfig.groups || [],
@@ -94,24 +115,56 @@ try {
 
     // Fast HTML fetcher with proxy and WAF/block detection
     async function fetchHtml(url) {
-        const proxyUrl = proxyConfig ? await proxyConfig.newUrl() : undefined;
-        const response = await gotScraping({
-            url,
-            headers: {
-                'accept-language': 'en-US,en;q=0.9',
-                'accept-encoding': 'gzip, deflate, br',
-                'sec-fetch-site': 'none',
-            },
-            headerGeneratorOptions: {
-                browsers: [{ name: 'chrome' }],
-                operatingSystems: ['windows', 'linux'],
-            },
-            sessionToken: httpSessionToken,
-            proxyUrl,
-            timeout: { request: 30000 },
-            retry: { limit: 1 },
-            throwHttpErrors: false,
-        });
+        let proxyUrl = proxyConfig ? await proxyConfig.newUrl() : undefined;
+        let response;
+        try {
+            response = await gotScraping({
+                url,
+                headers: {
+                    'accept-language': 'en-US,en;q=0.9',
+                    'accept-encoding': 'gzip, deflate, br',
+                    'sec-fetch-site': 'none',
+                },
+                headerGeneratorOptions: {
+                    browsers: [{ name: 'chrome' }],
+                    operatingSystems: ['windows', 'linux'],
+                },
+                sessionToken: httpSessionToken,
+                proxyUrl,
+                timeout: { request: 30000 },
+                retry: { limit: 1 },
+                throwHttpErrors: false,
+            });
+        } catch (err) {
+            if (isProxyTransportError(err) && proxyConfig) {
+                log.warning(`Proxy transport error (${err.message}) on ${url}, retrying direct connection without proxy...`);
+                proxyConfig = undefined;
+                response = await gotScraping({
+                    url,
+                    headers: {
+                        'accept-language': 'en-US,en;q=0.9',
+                        'accept-encoding': 'gzip, deflate, br',
+                        'sec-fetch-site': 'none',
+                    },
+                    headerGeneratorOptions: {
+                        browsers: [{ name: 'chrome' }],
+                        operatingSystems: ['windows', 'linux'],
+                    },
+                    sessionToken: httpSessionToken,
+                    timeout: { request: 30000 },
+                    retry: { limit: 1 },
+                    throwHttpErrors: false,
+                });
+            } else {
+                throw err;
+            }
+        }
+
+        if (isProxyTransportError(response.statusCode) && proxyConfig) {
+            log.warning(`Proxy returned HTTP ${response.statusCode} on ${url}, falling back to direct connection...`);
+            proxyConfig = undefined;
+            return fetchHtml(url);
+        }
 
         const blockCheck = detectBookingBlock(
             response.body,
@@ -369,8 +422,12 @@ try {
             } catch (pwErr) {
                 lastPwErr = pwErr;
                 await pwSession.close();
+                if (isProxyTransportError(pwErr) && proxyConfig) {
+                    log.warning(`⚠️ Playwright proxy transport error (${pwErr.message}), disabling dead proxy and retrying direct...`);
+                    proxyConfig = undefined;
+                }
                 if (pwAttempt < maxPwAttempts) {
-                    log.warning(`⚠️ Playwright attempt ${pwAttempt}/${maxPwAttempts} failed (${pwErr.message}). Retrying with a fresh proxy IP...`);
+                    log.warning(`⚠️ Playwright attempt ${pwAttempt}/${maxPwAttempts} failed (${pwErr.message}). Retrying...`);
                     await new Promise((r) => setTimeout(r, 1200));
                 }
             }
@@ -528,7 +585,7 @@ try {
                     if (key && seenHotelKeys.has(key)) continue;
                     if (key) seenHotelKeys.add(key);
 
-                    await Actor.pushData(h);
+                    await Actor.pushData(sanitizeRecord(h));
                     stats.totalHotels++;
                     addedOnPage++;
                     if (h.destination) stats.destinations.add(h.destination);
@@ -650,7 +707,7 @@ try {
 
                 const hotel = parseHotelDetailPage(html, rawUrl, searchParams);
                 if (hotel && hotel.name) {
-                    await Actor.pushData(hotel);
+                    await Actor.pushData(sanitizeRecord(hotel));
                     stats.totalHotels++;
                     if (hotel.city || cleanDestination) stats.destinations.add(hotel.city || cleanDestination);
                     if (hotel.priceNumeric > 0) {
@@ -704,6 +761,11 @@ try {
 
     await Actor.setValue('OUTPUT', summary);
     log.info('🏁 Execution Finished. Executive Summary:', summary);
+
+    if (stats.totalHotels === 0) {
+        hasFailed = true;
+        await Actor.fail(summary.message || 'No hotel records were extracted.');
+    }
 } catch (err) {
     hasFailed = true;
     log.error(`Fatal execution error: ${err.message}`, { stack: err.stack });
