@@ -24,83 +24,144 @@
                 "title": "Destination Searched"
             },
             "price": {
-                "type": ["string", "null"],
+                "type": [
+                    "string",
+                    "null"
+                ],
                 "title": "Total Price (Formatted)"
             },
             "priceNumeric": {
-                "type": ["number", "null"],
+                "type": [
+                    "number",
+                    "null"
+                ],
                 "title": "Total Price (Numeric)"
             },
             "currency": {
-                "type": ["string", "null"],
+                "type": [
+                    "string",
+                    "null"
+                ],
                 "title": "Currency Code"
             },
             "pricePerNight": {
-                "type": ["number", "null"],
+                "type": [
+                    "number",
+                    "null"
+                ],
                 "title": "Price Per Night"
             },
             "nights": {
-                "type": ["integer", "null"],
+                "type": [
+                    "integer",
+                    "null"
+                ],
                 "title": "Number of Nights"
             },
             "checkin": {
-                "type": ["string", "null"],
+                "type": [
+                    "string",
+                    "null"
+                ],
                 "title": "Check-in Date (YYYY-MM-DD)"
             },
             "checkout": {
-                "type": ["string", "null"],
+                "type": [
+                    "string",
+                    "null"
+                ],
                 "title": "Check-out Date (YYYY-MM-DD)"
             },
             "rating": {
-                "type": ["number", "null"],
+                "type": [
+                    "number",
+                    "null"
+                ],
                 "title": "Overall Review Score (0 - 10)"
             },
             "ratingText": {
-                "type": ["string", "null"],
+                "type": [
+                    "string",
+                    "null"
+                ],
                 "title": "Review Description (e.g. Superb, Fabulous)"
             },
             "reviewsCount": {
-                "type": ["integer", "null"],
+                "type": [
+                    "integer",
+                    "null"
+                ],
                 "title": "Total Reviews Count"
             },
             "reviewSubscores": {
-                "type": ["object", "null"],
-                "title": "Review Category Subscores"
+                "type": [
+                    "object",
+                    "null"
+                ],
+                "title": "Review Category Subscores",
+                "additionalProperties": true
             },
             "stars": {
-                "type": ["integer", "null"],
+                "type": [
+                    "integer",
+                    "null"
+                ],
                 "title": "Star Rating (1 - 5)"
             },
             "propertyType": {
-                "type": ["string", "null"],
+                "type": [
+                    "string",
+                    "null"
+                ],
                 "title": "Property Type"
             },
             "address": {
-                "type": ["string", "null"],
+                "type": [
+                    "string",
+                    "null"
+                ],
                 "title": "Full Address"
             },
             "city": {
-                "type": ["string", "null"],
+                "type": [
+                    "string",
+                    "null"
+                ],
                 "title": "City"
             },
             "country": {
-                "type": ["string", "null"],
+                "type": [
+                    "string",
+                    "null"
+                ],
                 "title": "Country"
             },
             "distanceFromCenter": {
-                "type": ["string", "null"],
+                "type": [
+                    "string",
+                    "null"
+                ],
                 "title": "Distance from City Center"
             },
             "latitude": {
-                "type": ["number", "null"],
+                "type": [
+                    "number",
+                    "null"
+                ],
                 "title": "Latitude Coordinate"
             },
             "longitude": {
-                "type": ["number", "null"],
+                "type": [
+                    "number",
+                    "null"
+                ],
                 "title": "Longitude Coordinate"
             },
             "roomType": {
-                "type": ["string", "null"],
+                "type": [
+                    "string",
+                    "null"
+                ],
                 "title": "Room / Unit Type"
             },
             "hasFreeCancellation": {
@@ -116,24 +177,99 @@
                 "title": "No Prepayment Needed"
             },
             "facilities": {
-                "type": ["array", "null"],
-                "title": "Popular Facilities / Amenities"
+                "type": [
+                    "array",
+                    "null"
+                ],
+                "title": "Popular Facilities / Amenities",
+                "items": {
+                    "type": "string"
+                }
             },
             "description": {
-                "type": ["string", "null"],
+                "type": [
+                    "string",
+                    "null"
+                ],
                 "title": "Property Description"
             },
             "imageUrl": {
-                "type": ["string", "null"],
+                "type": [
+                    "string",
+                    "null"
+                ],
                 "title": "Cover Image URL"
             },
             "imageUrls": {
-                "type": ["array", "null"],
-                "title": "HD Image Gallery URLs"
+                "type": [
+                    "array",
+                    "null"
+                ],
+                "title": "HD Image Gallery URLs",
+                "items": {
+                    "type": "string"
+                }
             },
             "scrapedAt": {
                 "type": "string",
                 "title": "Scraped At Timestamp"
+            }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": true,
+        "required": []
+    },
+    "views": {
+        "overview": {
+            "title": "Overview",
+            "transformation": {
+                "fields": [
+                    "type",
+                    "id",
+                    "name",
+                    "url",
+                    "destination",
+                    "price",
+                    "priceNumeric",
+                    "currency"
+                ]
+            },
+            "display": {
+                "component": "table",
+                "properties": {
+                    "type": {
+                        "label": "Entity Type",
+                        "format": "text"
+                    },
+                    "id": {
+                        "label": "Hotel ID / Slug",
+                        "format": "text"
+                    },
+                    "name": {
+                        "label": "Hotel / Property Name",
+                        "format": "text"
+                    },
+                    "url": {
+                        "label": "Booking.com Hotel URL",
+                        "format": "link"
+                    },
+                    "destination": {
+                        "label": "Destination Searched",
+                        "format": "text"
+                    },
+                    "price": {
+                        "label": "Total Price (Formatted)",
+                        "format": "text"
+                    },
+                    "priceNumeric": {
+                        "label": "Total Price (Numeric)",
+                        "format": "text"
+                    },
+                    "currency": {
+                        "label": "Currency Code",
+                        "format": "text"
+                    }
+                }
             }
         }
     }
