@@ -1,0 +1,15 @@
+{
+    "actorKeyValueStoreSchemaVersion": 1,
+    "title": "Hotel & Booking.com Scraper Key-Value Store",
+    "description": "Key-value store schema for Hotel & Booking.com Scraper.",
+    "collections": {
+        "default": {
+            "title": "Default Output Records",
+            "description": "Run summary and extraction statistics stored under OUTPUT.",
+            "keyPrefix": "OUTPUT",
+            "contentTypes": [
+                "application/json"
+            ]
+        }
+    }
+}
